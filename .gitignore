@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+company.json
+見積書_*.xlsx
+output/
