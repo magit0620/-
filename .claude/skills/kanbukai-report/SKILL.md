@@ -20,6 +20,7 @@ description: 幹部会用「受注の現状」資料（Word・2ページ）を�
   - `build_report.py data.json template.docx 出力.docx` … data.json から資料を作る
   - `extract.py 資料.docx data.json` … できあがった資料（人が手直しした版も）から data.json を取り出す
   - `template.docx` … 用紙設定（A4横）のひな形
+  - `strip_fonts.py 入力.docx 出力.docx` … 埋め込みフォントを外して軽くする（人が Word で保存した版は数MBになるため。アップロード前に必ず通す）
 
 ## 対象と区分
 
@@ -63,7 +64,7 @@ description: 幹部会用「受注の現状」資料（Word・2ページ）を�
    - 各行の `色`（完工／受注／失注／新規／空）、`赤字`（赤字にする列名のリスト）、`取消線` を付ける。
 4. `python3 .claude/skills/kanbukai-report/build_report.py data.json .claude/skills/kanbukai-report/template.docx 受注の現状_YYYYMMDD.docx` で資料を作り、PDF にして見た目を確認する（2ページに収まっているか、文字が切れていないか）。
 5. `reports/YYYY-MM-DD/` に docx と data.json を保存して、コミットして push する（次回の比較元になる）。
-6. 資料を Google ドライブにもアップロードし（Word のまま。Google ドキュメントに変換しない）、リンクを利用者に知らせる。
+6. `strip_fonts.py` で軽くしてから、資料を Google ドライブのマイドライブ直下に「受注の現状_YYYYMMDD.docx」の名前でアップロードし（Word のまま。Google ドキュメントに変換しない）、リンクを利用者に知らせる。
 7. 人が資料を手直ししたら、その docx を `extract.py` で data.json に戻して `reports/` を更新する（次回はその版と比べる）。
 8. 次の幹部会の前日の自動実行がまだ登録されていなければ登録する。
 
