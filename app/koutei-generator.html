@@ -198,7 +198,31 @@
   .hint{margin-top:12px;font-size:11.5px;color:var(--ink-faint);line-height:1.7;}
   .hint b{color:var(--ink-soft);font-weight:600;}
   .hidden{display:none!important;}
-  .cloudbar,#cloudBtnE,#printBtn,#pdfSiteBtn,#pdfCustBtn{display:none!important;}
+  .cloudbar,#cloudBtnE{display:none!important;}
+  #printPages.pdfmode{display:block!important;position:absolute;left:-40000px;top:0;width:max-content;padding:0;
+    --bg:#eef1f4;--panel:#fff;--panel-2:#f7f9fb;--ink:#1b2733;--ink-soft:#56697a;--ink-faint:#8493a2;--line:#dde4ea;--line-strong:#c4cdd6;--weekend:#e9edf1;--sunday:#f7e7ea;--company:#f4ecdd;--today:#e8553c;--grid-week:#b7c2cd;--accent:#2f6f9f;
+    background:#fff;color:#111;font-family:"Noto Sans JP",-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;}
+  #printPages.pdfmode .ppage{position:relative;background:#fff;padding:6px 6px 8px;}
+  #printPages.pdfmode .ppage+.ppage{margin-top:24px;}
+  #printPages.pdfmode .grid{border:1px solid #999;min-width:0!important;}
+  #printPages.pdfmode .board{box-shadow:none;border:1px solid #999;border-radius:0;}
+  #printPages.pdfmode .timehead{position:relative!important;overflow:hidden!important;background:#fff;}
+  #printPages.pdfmode .lane{overflow:hidden!important;}
+  #printPages.pdfmode .todayline{display:none!important;}
+  #printPages.pdfmode.cust .rl2{display:none!important;}
+  #printPages.pdfmode .pnum{text-align:right;font-size:11px;color:#333;margin:0 0 4px;}
+  #printPages.pdfmode .grip,#printPages.pdfmode .lnk,#printPages.pdfmode .del,#printPages.pdfmode .addrow,#printPages.pdfmode .addcat,#printPages.pdfmode .catlabel .cdel,#printPages.pdfmode .whol{display:none!important;}
+  #printPages.pdfmode .docheader{border-bottom:2px solid #333;padding-bottom:8px;margin:0 0 10px;}
+  #printPages.pdfmode .dh-title,#printPages.pdfmode .dh-term,#printPages.pdfmode .dh-r,#printPages.pdfmode .dh-edit{color:#111!important;}
+  #printPages.pdfmode .dh-title{font-size:30px;} #printPages.pdfmode .dh-term{font-size:22px;} #printPages.pdfmode .dh-r{font-size:19px;}
+  #printPages.pdfmode .dh-edit{border-bottom:none!important;min-width:0;}
+  #printPages.pdfmode .corner,#printPages.pdfmode .timehead,#printPages.pdfmode .labels,#printPages.pdfmode .catlabel{position:static!important;}
+  #printPages.pdfmode .rl2 input{border:none!important;background:none!important;color:#333!important;padding:2px 0;}
+  #printPages.pdfmode .rl2 input::placeholder{color:transparent!important;}
+  #printPages.pdfmode .docfooter{margin-top:10px;border-top:1px solid #999;padding-top:8px;}
+  #printPages.pdfmode .dfoot-txt{color:#111!important;font-size:19px;}
+  #printPages.pdfmode .dfoot-logo{height:60px;width:185px;max-width:none;flex:none;filter:none!important;}
+  .btn:disabled{opacity:.55;cursor:progress;}
   .askp{margin:0 0 16px;font-size:14px;line-height:1.7;}
 
   #printPages{display:none;}
@@ -269,7 +293,7 @@
       </div>
       <div class="zoom"><button id="zOut" title="縮小">−</button><button id="zIn" title="拡大">＋</button></div>
       <button class="btn ghost sm" id="saveBtn">💾 途中保存</button>
-      <button class="btn ghost sm" id="printBtn">🖨 印刷</button>
+      <button class="btn ghost sm" id="printBtn" title="現場用のPDFを作ります。保存したPDFを開いて印刷してください">🖨 印刷（PDF）</button>
       <button class="btn ghost sm" id="pdfSiteBtn">📄 現場用PDF</button>
       <button class="btn ghost sm" id="pdfCustBtn">📄 お客様用PDF</button>
       <button class="btn ghost sm" id="newBtn">🏠 トップへ</button>
@@ -297,7 +321,7 @@
     <p class="hint">
       <b>操作:</b> バー中央ドラッグで移動／端ドラッグで日数(実働)伸縮。行の <b>⠿</b> で工程を、カテゴリー行の <b>⠿</b> でカテゴリーごと並べ替え。<b>🔗</b> で前の工程と連結（連結中は一緒に移動）。「表示開始」はプリセットまたはカレンダーで指定できます。<br>
       <b>休工日:</b> 実働日数ベースで休工日は自動的に飛ばして（斜線表示）工程が乗りません。休工日・祝日は「⚙ 稼働日・書類設定」で管理します。業者欄は Enter で次の欄に移動します。<br>
-      <b>保存:</b> 「💾 途中保存」で、事務所の共有保存に物件として保存します（チーム全員とこぎつねが見られます）。タイトル・工期・担当者・作成日・社名は<b>紙面上をクリックして直接編集</b>できます。
+      <b>保存・印刷:</b> 「💾 途中保存」で、事務所の共有保存に物件として保存します（チーム全員とこぎつねが見られます）。「🖨 印刷（PDF）」「📄 現場用PDF」は業者名あり、「📄 お客様用PDF」は業者名なしのPDF（A3横、長い工程は複数ページ）を作ります。保存したPDFを開いて印刷してください。タイトル・工期・担当者・作成日・社名は<b>紙面上をクリックして直接編集</b>できます。
     </p>
     <div class="docfooter" id="docFooterWrap">
       <span class="dfoot-txt" id="docFooter" contenteditable="true" spellcheck="false" title="クリックで社名を直接編集"></span>
@@ -1002,9 +1026,50 @@
   }
   window.addEventListener("beforeprint",()=>preparePrint(false));
   window.addEventListener("afterprint",cleanupPrint);
-  document.getElementById("printBtn").addEventListener("click",()=>{preparePrint(false);window.print();});
-  document.getElementById("pdfSiteBtn").addEventListener("click",()=>{toast("印刷ダイアログの送信先で「PDFに保存」を選んでください");preparePrint(false);window.print();});
-  document.getElementById("pdfCustBtn").addEventListener("click",()=>{toast("お客様用（業者名なし）です。送信先で「PDFに保存」を選んでください");preparePrint(true);window.print();});
+  let PDFSAVE=null; try{ PDFSAVE=(window.parent&&window.parent!==window&&window.parent.KOUTEI_PDF)||null; }catch(_){ PDFSAVE=null; }
+  function loadJs(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+  let pdfBusy=false;
+  async function makePDF(cust,btn){
+    if(pdfBusy||!state)return;
+    if(document.getElementById("editor").classList.contains("hidden"))return;
+    pdfBusy=true; const bs=["printBtn","pdfSiteBtn","pdfCustBtn"].map(id=>document.getElementById(id)); bs.forEach(b=>b.disabled=true);
+    const label=btn.textContent; btn.textContent="PDFを作っています…";
+    const holder=document.getElementById("printPages");
+    try{
+      if(!window.html2canvas) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+      if(!window.jspdf) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+      if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+      updateDoc(); buildPrintPages(!!cust);
+      holder.classList.add("pdfmode"); holder.classList.toggle("cust",!!cust);
+      for(const im of holder.querySelectorAll("img.dfoot-logo")){
+        try{ const W=555,H=180; const src=im.getAttribute("src"); const img=new Image(); img.src=src; await img.decode();
+          const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.getContext("2d").drawImage(img,0,0,W,H);
+          im.src=cv.toDataURL("image/png"); await im.decode().catch(()=>{}); }catch(_){}
+      }
+      const pages=[...holder.querySelectorAll(".ppage")];
+      const pdf=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a3",compress:true});
+      const PW=420,PH=297,M=8;
+      for(let i=0;i<pages.length;i++){
+        pages[i].style.zoom="";
+        const c=await window.html2canvas(pages[i],{scale:2,backgroundColor:"#ffffff",logging:false});
+        let w=PW-M*2,h=c.height*w/c.width; if(h>PH-M*2){h=PH-M*2;w=c.width*h/c.height;}
+        if(i>0)pdf.addPage("a3","landscape");
+        pdf.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",(PW-w)/2,M,w,h);
+      }
+      const blob=pdf.output("blob");
+      const fname=((state.name||"工程表").replace(/[\\/:*?"<>|]/g,"_"))+(cust?"_お客様用":"_現場用")+".pdf";
+      if(PDFSAVE){ await PDFSAVE(fname,blob); toast("PDFを用意しました。保存してから開いて印刷してください"); }
+      else toast("この画面ではPDFを保存できません");
+    }catch(e){
+      toast(e&&e.code==="declined"?"保存をやめました":"PDFを作れませんでした。もう一度押してください");
+    }finally{
+      holder.classList.remove("pdfmode","cust"); holder.removeAttribute("style"); holder.innerHTML="";
+      btn.textContent=label; bs.forEach(b=>b.disabled=false); pdfBusy=false;
+    }
+  }
+  document.getElementById("printBtn").addEventListener("click",e=>makePDF(false,e.currentTarget));
+  document.getElementById("pdfSiteBtn").addEventListener("click",e=>makePDF(false,e.currentTarget));
+  document.getElementById("pdfCustBtn").addEventListener("click",e=>makePDF(true,e.currentTarget));
   document.getElementById("newBtn").addEventListener("click",()=>{
     renderLibrary();renderResume();
     document.getElementById("editor").classList.add("hidden");document.getElementById("setup").classList.remove("hidden");
