@@ -166,6 +166,7 @@ const ICONS = {
   gantt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M7 13h6M10 17h7"/></svg>',
   done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V10l6-5 6 5v10"/><path d="m9 14 2 2 4-4"/></svg>',
   alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  present: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8M7 9h6M7 12h10"/></svg>',
   redo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8"/><path d="M20 3v5h-5"/></svg>'
 };
 
@@ -194,7 +195,8 @@ const AGENTS = [
       { id: "ask", icon: "ask", title: "ルールの質問", sub: "コート・ゴミ箱・PCなど", ask: "フリーアドレスのルールで気になること、なんでも聞いてくださいね。", label: "質問", required: true, ph: "例：上着はどこに掛ければいい？",
         job: "シートの決定事項から答えを探し、見つかれば答えと「いつのMTGで決まったか」を書く。決まっていなければ「まだ決まっていません」と答え、MTGの議題に入れる案を出す。" },
       { id: "proposal", icon: "idea", title: "施主様への提案", sub: "採用力アップのアイディア", ask: "施主様の会社のこと、わかる範囲で教えてください。提案のアイディアを出しますね。", label: "施主様の情報（業種・人数・今の困りごと・希望など）", required: true, ph: "例：製造業、事務所15人。トイレが古く、若手の応募が少ない",
-        job: "施主様の情報と、自社のフリーアドレス化の実例（座席の自由化、CadLabo、ノートPC化、ペーパーレス化、個人収納、個別ポストなど）、インターンシップ生アンケートで意見が多かった「トイレ」「小規模なオフィスリフォーム」を入口にした案を優先して出す。案ごとに「何をするか」「採用（若手・学生）にどう効くか」「自社で試した実例があるか」を書く。工事費や工期は根拠がなければ書かない。情報が足りなければヒアリングで聞くことの一覧を出す。" }
+        job: "施主様の情報と、自社のフリーアドレス化の実例（座席の自由化、CadLabo、ノートPC化、ペーパーレス化、個人収納、個別ポストなど）、インターンシップ生アンケートで意見が多かった「トイレ」「小規模なオフィスリフォーム」を入口にした案を優先して出す。案ごとに「何をするか」「採用（若手・学生）にどう効くか」「自社で試した実例があるか」を書く。工事費や工期は根拠がなければ書かない。情報が足りなければヒアリングで聞くことの一覧を出す。" },
+      { id: "presen", kind: "sheet", icon: "present", title: "プレゼンシート", sub: "施主様にお見せする1枚", ask: "🌸施主様にお見せするプレゼンシートを作りますね。会社のことと、どんな提案にしたいか教えてください。", label: "施主様の情報と、提案したいこと", required: true, ph: "例：アサヒエンジニアリング様（製造業・事務所15人）。トイレが古く若手の応募が少ない。トイレ改修を入口に、休憩スペースも提案したい" }
     ]
   },
   {
@@ -401,6 +403,7 @@ function task(a, t) {
 }
 
 async function run(a, t) {
+  if (t.kind === "sheet") return runSheet(a, t);
   const input = document.getElementById(`in-${a.id}-${t.id}`).value.trim();
   const out = document.getElementById("out");
   const say = (html) => `<div class="talk"><img src="${a.img}" alt=""><div class="say" id="ans">${html}</div></div>`;
@@ -444,6 +447,147 @@ ${input || "（とくになし）"}`;
       : e && e.code === "rate_limited" ? "少し混み合っています。ひと息おいてから、もう一度お願いします。"
       : "うまくお返事できませんでした。もう一度お願いします。";
     ans.classList.remove("wait"); ans.textContent = (e && e.text ? e.text + "\n\n" : "") + msg;
+  } finally { btn.disabled = false; busy = null; }
+}
+
+
+/* ===== プレゼンシート ===== */
+const SHEET_CSS = `
+.psheet { background: #fffdfb; color: #3d3033; border: 1px solid #ecdcd8; border-radius: 16px; overflow: hidden; font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif; line-height: 1.75; font-size: 14px; }
+.psheet * { box-sizing: border-box; }
+.ps-head { background: #c95c7b; color: #fff; padding: 18px 22px 16px; display: flex; flex-direction: column; gap: 4px; }
+.ps-head .ps-co { font-size: 11px; letter-spacing: .14em; opacity: .9; }
+.ps-head h2 { margin: 0; font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif; font-size: 21px; line-height: 1.4; font-weight: 800; text-wrap: balance; }
+.ps-head .ps-client { font-size: 14px; font-weight: 700; }
+.ps-body { padding: 18px 22px 8px; display: flex; flex-direction: column; gap: 16px; }
+.ps-lead { margin: 0; font-size: 15px; font-weight: 700; }
+.ps-sec { display: flex; flex-direction: column; gap: 8px; }
+.ps-sec h3 { margin: 0; font-size: 12px; letter-spacing: .14em; color: #c95c7b; font-weight: 700; }
+.ps-issues { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.ps-issues li { background: #fdeef1; border-radius: 10px; padding: 6px 12px; }
+.ps-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.ps-card { border: 1px solid #ecdcd8; border-radius: 12px; padding: 12px 14px; background: #fff; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ps-card b { font-size: 15px; color: #3d3033; }
+.ps-card .ps-eff { color: #8a3d55; }
+.ps-card .ps-proof { font-size: 12px; color: #6f7b62; }
+.ps-voice { margin: 0; border-left: 3px solid #e98aa3; padding: 4px 12px; color: #6a5a5e; font-size: 13px; }
+.ps-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; counter-reset: st; }
+.ps-steps li { counter-increment: st; background: #fff; border: 1px solid #ecdcd8; border-radius: 999px; padding: 3px 12px 3px 6px; font-size: 13px; }
+.ps-steps li::before { content: counter(st); display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; background: #c95c7b; color: #fff; font-size: 11px; font-weight: 700; }
+.ps-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 22px 14px; font-size: 11px; color: #8a777c; border-top: 1px dashed #ecdcd8; margin-top: 8px; }
+`;
+(function () { const s = document.createElement("style"); s.textContent = SHEET_CSS + ".psheet-wrap { min-width: 0; } .missing { margin: 0; padding: 8px 12px 8px 2em; }"; document.head.appendChild(s); })();
+
+function arr(v) { return Array.isArray(v) ? v.filter(x => x !== null && x !== undefined && x !== "") : []; }
+function sheetHTML(d) {
+  const props = arr(d.proposals).map(p => `<div class="ps-card"><b>${esc(p.name || "")}</b><span>${esc(p.what || "")}</span>${p.effect ? `<span class="ps-eff">${esc(p.effect)}</span>` : ""}${p.proof ? `<span class="ps-proof">実例：${esc(p.proof)}</span>` : ""}</div>`).join("");
+  return `<article class="psheet">
+  <header class="ps-head"><span class="ps-co">株式会社アイビ建築 ・ 採用力アップリフォーム</span><h2>${esc(d.title || "ご提案")}</h2>${d.client ? `<span class="ps-client">${esc(d.client)}</span>` : ""}</header>
+  <div class="ps-body">
+    ${d.lead ? `<p class="ps-lead">${esc(d.lead)}</p>` : ""}
+    ${arr(d.issues).length ? `<section class="ps-sec"><h3>いまのお困りごと</h3><ul class="ps-issues">${arr(d.issues).map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>` : ""}
+    ${props ? `<section class="ps-sec"><h3>ご提案</h3><div class="ps-cards">${props}</div></section>` : ""}
+    ${d.voice ? `<section class="ps-sec"><h3>若い世代の声</h3><p class="ps-voice">${esc(d.voice)}</p></section>` : ""}
+    ${arr(d.steps).length ? `<section class="ps-sec"><h3>進め方</h3><ol class="ps-steps">${arr(d.steps).map(x => `<li>${esc(x)}</li>`).join("")}</ol></section>` : ""}
+  </div>
+  <footer class="ps-foot"><span>株式会社アイビ建築</span><span>${esc(d.date || "")}</span></footer>
+</article>`;
+}
+function sheetMarkdown(d) {
+  const L = [];
+  if (d.client) L.push(`**${d.client}**`, "");
+  if (d.lead) L.push(d.lead, "");
+  if (arr(d.issues).length) { L.push("## いまのお困りごと"); arr(d.issues).forEach(x => L.push(`- ${x}`)); L.push(""); }
+  if (arr(d.proposals).length) { L.push("## ご提案"); arr(d.proposals).forEach(p => { L.push(`### ${p.name || ""}`); if (p.what) L.push(p.what); if (p.effect) L.push(`- 採用への効果：${p.effect}`); if (p.proof) L.push(`- 実例：${p.proof}`); L.push(""); }); }
+  if (d.voice) L.push("## 若い世代の声", d.voice, "");
+  if (arr(d.steps).length) { L.push("## 進め方"); arr(d.steps).forEach((x, i) => L.push(`${i + 1}. ${x}`)); L.push(""); }
+  L.push("---", `株式会社アイビ建築 ・ 採用力アップリフォーム ${d.date || ""}`);
+  return L.join("\n");
+}
+function sheetText(d) { return (d.title || "") + "\n" + sheetMarkdown(d).replace(/\*\*|^#+ /gm, ""); }
+function cleanName(s) { return String(s || "ご提案").replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, " ").slice(0, 120); }
+
+async function runSheet(a, t) {
+  const input = document.getElementById(`in-${a.id}-${t.id}`).value.trim();
+  const out = document.getElementById("out");
+  const say = (html) => `<div class="talk"><img src="${a.img}" alt=""><div class="say" id="ans">${html}</div></div>`;
+  if (!input) { out.innerHTML = say(`「${esc(t.label)}」を書いてもらえると、取りかかれます。`); return; }
+  const sample = await use("sample");
+  if (!sample) { out.innerHTML = `<p class="note">この画面ではシートを作れません。claude.ai でこのページを開いてください。</p>`; return; }
+  const btn = document.getElementById("run"); btn.disabled = true;
+  out.innerHTML = say("資料を集めて、シートを組み立てています…"); document.getElementById("ans").classList.add("wait");
+  const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "long", day: "numeric" });
+  const prompt = `${a.rules}
+
+今日（日本時間）：${today}
+使える道具：read_sheet / sheet_tabs / search_drive / calendar_events / gmail_search / gmail_thread（どれも読むだけ）。
+
+やること：施主様（お客様の会社）にお見せする「採用力アップリフォーム」のプレゼンシート1枚の中身を作る。
+- まず read_sheet でチーム活動シートを読み、自社のフリーアドレス化の実例、インターンシップ生アンケートで意見が多かったこと（トイレ・小規模なオフィスリフォーム）を確かめる。必要なら search_drive で「採用力」「オフィス環境」の提案資料を探して名前を確認してよい。
+- 施主様向けの文章なので、社内の言い方（MTG、チーム名、担当者名、社内の課題）は書かない。やさしく丁寧な敬語で、短く。
+- 依頼文とシート・資料にない事実（金額・工期・施主様の事情・数字）は作らない。工事費や工期は書かない。根拠のない「アンケートの声」は書かない（その場合 voice は空文字）。
+- わからないこと・施主様に確認が必要なことは missing に入れる（シートには載せない）。
+
+依頼文：
+${input}
+
+返事はJSONだけ。形：
+{"title":"シートの見出し（例：採用力を高めるオフィス環境づくりのご提案）","client":"◯◯株式会社 様","lead":"1〜2文の要旨","issues":["いまのお困りごと（3つまで）"],"proposals":[{"name":"提案名","what":"何をするか（1〜2文）","effect":"採用（若手・学生）にどう効くか（1文）","proof":"自社で試した実例（なければ空文字）"}],"voice":"若い世代の声（根拠がある場合のみ。なければ空文字）","steps":["ヒアリング","現地調査","プランとお見積り","ご契約","工事"],"missing":["確認が必要なこと"],"date":"${today}"}
+proposals は2〜4件。`;
+  const ctl = new AbortController(); busy = ctl;
+  try {
+    const d = await sample.json(prompt, { signal: ctl.signal, modelTier: "default", tools: SAMPLE_TOOLS, cache: false });
+    if (!d || typeof d !== "object" || !d.title) throw { code: "invalid_json" };
+    const miss = arr(d.missing);
+    out.innerHTML = say(`🌸できました！ 施主様にお見せする前に、中身を確かめてくださいね。${miss.length ? `\n\n**確認が必要なこと**` : ""}`) +
+      (miss.length ? `<ul class="missing note">${miss.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "") +
+      `<div class="psheet-wrap">${sheetHTML(d)}</div>
+      <div class="row"><button class="ghost" id="toDoc">ドキュメントとして保存</button><button class="ghost" id="toHtml" hidden>HTMLファイルで保存</button><button class="ghost" id="copy">文章をコピー</button><button class="ghost" id="again">作り直す</button></div>
+      <p class="note" id="saveMsg" hidden></p>`;
+    const ans = document.getElementById("ans"); ans.innerHTML = rich(ans.textContent);
+    const msg = (html) => { const m = document.getElementById("saveMsg"); m.hidden = false; m.innerHTML = html; };
+    document.getElementById("again").onclick = () => runSheet(a, t);
+    document.getElementById("copy").onclick = async (ev) => {
+      try { await navigator.clipboard.writeText(sheetText(d)); ev.target.textContent = "コピーしました"; }
+      catch { msg("コピーできませんでした。シートの文字を選んでコピーしてください。"); }
+    };
+    document.getElementById("toDoc").onclick = async (ev) => {
+      const b = ev.target; b.disabled = true; b.textContent = "保存しています…";
+      const md = sheetMarkdown(d);
+      const mcp = await use("mcp");
+      if (!mcp) { msg("この画面ではドキュメントに保存できません。"); b.disabled = false; b.textContent = "ドキュメントとして保存"; return; }
+      if (new TextEncoder().encode(md).length >= 32000) { msg("中身が長すぎて保存できません。提案の数を減らして作り直してください。"); b.disabled = false; b.textContent = "ドキュメントとして保存"; return; }
+      try {
+        const r = await mcp.callTool("Claude Docs", "batch", { container: { kind: "project", create: { name: cleanName(d.title + (d.client ? "（" + d.client + "）" : "")), doc: { markdown: md } } }, batch: [] });
+        const url = r && r.payload && r.payload.url;
+        b.textContent = "保存しました";
+        msg(url ? `ドキュメントを作りました：<a href="${esc(url)}" target="_blank" rel="noopener">開く</a>` : "ドキュメントを作りました。Claude Docs の一覧から開けます。");
+      } catch (e) {
+        b.disabled = false; b.textContent = "ドキュメントとして保存";
+        const sc = e && e.result && e.result.structuredContent;
+        if (e && e.code === "approval_required") msg("ドキュメントを作るには許可が必要です。claude.ai でこのページを開き、許可してからもう一度押してください。");
+        else if (sc && sc.created === false) msg(`ドキュメントは作られませんでした（${esc(sc.reason || "理由不明")}）。`);
+        else msg("ドキュメントができたか確認できませんでした。Claude Docs の一覧を見てから、必要ならもう一度押してください。");
+      }
+    };
+    const dl = await use("downloads");
+    const hb = document.getElementById("toHtml");
+    if (dl && hb) {
+      hb.hidden = false;
+      hb.onclick = async () => {
+        const html = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(d.title)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Maru+Gothic:wght@500;700&display=swap"><style>body{margin:0;padding:24px;background:#f6eeec}.psheet{max-width:880px;margin:0 auto}${SHEET_CSS}</style></head><body>${sheetHTML(d)}</body></html>`;
+        try { await dl.save({ filename: cleanName(d.title).replace(/[\\/:*?"<>|]/g, "_") + ".html", data: html }); }
+        catch (e) { if (!(e && (e.code === "declined" || e.code === "cancelled"))) msg("ファイルを保存できませんでした。"); }
+      };
+    }
+  } catch (e) {
+    if (e && e.code === "cancelled") return;
+    const ans = document.getElementById("ans"); if (!ans) return;
+    ans.classList.remove("wait");
+    ans.textContent = e && e.code === "not_granted" ? "シートを作るには許可が必要です。ページの「権限」から許可してください。"
+      : e && e.code === "rate_limited" ? "少し混み合っています。ひと息おいてから、もう一度お願いします。"
+      : e && e.code === "invalid_json" ? "シートの形にうまくまとまりませんでした。依頼の内容を短くして、もう一度お願いします。"
+      : "うまく作れませんでした。もう一度お願いします。";
   } finally { btn.disabled = false; busy = null; }
 }
 

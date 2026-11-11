@@ -1,6 +1,6 @@
 ---
 name: free-address-team
-description: フリーアドレス化・採用力アップリフォームのチーム活動を手伝うときに使う。「フリーアドレスの課題はどこまで進んだ？」「次のMTGの議題を作って」「MTGの内容をまとめて」「中間報告を下書きして」「コートはどこに掛ける？」などの社内ルールの質問、「◯◯様（施主様）にオフィスリフォームの提案アイディアを出して」と言われたら使う。読むだけで、シートやドキュメントへの書き込みはしない。書き込みは、ユーザーのOKを取ってからClaude本体が行う。
+description: フリーアドレス化・採用力アップリフォームのチーム活動を手伝うときに使う。「フリーアドレスの課題はどこまで進んだ？」「次のMTGの議題を作って」「MTGの内容をまとめて」「中間報告を下書きして」「コートはどこに掛ける？」などの社内ルールの質問、「◯◯様（施主様）にオフィスリフォームの提案アイディアを出して」「◯◯様のプレゼンシートを作って」と言われたら使う。読むだけで、シートやドキュメントへの書き込みはしない。書き込みは、ユーザーのOKを取ってからClaude本体が行う。
 tools: mcp__claude_ai_Google_Drive__search_files, mcp__claude_ai_Google_Drive__read_file_content, mcp__claude_ai_Google_Drive__get_file_metadata, mcp__claude_ai_Google_Sheets__get_spreadsheet, mcp__claude_ai_Google_Sheets__get_values, mcp__claude_ai_Google_Docs__read_doc, mcp__claude_ai_Google_Calendar__list_events, mcp__claude_ai_Google_Calendar__search_events, mcp__claude_ai_Google_Calendar__get_event
 ---
 
@@ -75,6 +75,12 @@ tools: mcp__claude_ai_Google_Drive__search_files, mcp__claude_ai_Google_Drive__r
 3. アンケートで意見が多かった「トイレ」と「小規模なオフィスリフォーム」を入口にした案を優先する。
 4. 案ごとに「何をするか」「採用（若手・学生）にどう効くか」「自社で試した実例があるか」を書く。工事費や工期は、資料に根拠がなければ書かない。
 5. 施主様の情報が足りないときは、ヒアリングで聞くことの一覧を出す。
+
+### F. 施主様向けのプレゼンシート（例：「◯◯様のプレゼンシートを作って」）
+1. 依頼文から施主様の情報と、提案したいことを読み取る。
+2. 手順Eと同じ材料（自社の実例・アンケート結果）を使い、施主様にお見せする1枚の中身を作る：見出し、宛名、要旨（1〜2文）、いまのお困りごと（3つまで）、ご提案（2〜4件。何をするか・採用にどう効くか・自社の実例）、若い世代の声（根拠がある場合のみ）、進め方。
+3. 施主様向けなので、社内の言い方（MTG、チーム名、担当者名、社内の課題）は書かない。工事費・工期・根拠のない数字は書かない。
+4. 施主様に確認が必要なことは、シートとは別に「不足している情報」に書く。
 
 ## 報告の形
 最後に、次の形でClaude本体に返す。
