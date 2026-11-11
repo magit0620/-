@@ -575,7 +575,7 @@
   const tip=document.createElement("div");tip.className="duration-tip";document.body.appendChild(tip);
   const dropline=document.createElement("div");dropline.className="dropline";document.body.appendChild(dropline);
   const toastEl=document.createElement("div");toastEl.className="toast";document.body.appendChild(toastEl);let toastT=null;
-  function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove("show"),2000);}
+  function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove("show"),m.length>30?6000:2000);}
   let barMap=new Map(), taskY=new Map(), linkSvg=null;
 
   function enterEditor(){
@@ -1036,8 +1036,18 @@
     const label=btn.textContent; btn.textContent="PDFを作っています…";
     const holder=document.getElementById("printPages");
     try{
-      if(!window.html2canvas) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-      if(!window.jspdf) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+      let H2C=window.html2canvas, JSPDF=window.jspdf;
+      if(!H2C||!JSPDF){
+        try{
+          if(!window.html2canvas) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+          if(!window.jspdf) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+          H2C=window.html2canvas; JSPDF=window.jspdf;
+        }catch(_){
+          const L=window.parent&&window.parent.KOUTEI_LIBS?await window.parent.KOUTEI_LIBS():null;
+          if(!L) throw {code:"PDFの部品を読み込めませんでした"};
+          H2C=L.html2canvas; JSPDF=L.jspdf;
+        }
+      }
       if(document.fonts&&document.fonts.ready) await document.fonts.ready;
       updateDoc(); buildPrintPages(!!cust);
       holder.classList.add("pdfmode"); holder.classList.toggle("cust",!!cust);
@@ -1047,21 +1057,26 @@
           im.src=cv.toDataURL("image/png"); await im.decode().catch(()=>{}); }catch(_){}
       }
       const pages=[...holder.querySelectorAll(".ppage")];
-      const pdf=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a3",compress:true});
+      const pdf=new JSPDF.jsPDF({orientation:"landscape",unit:"mm",format:"a3",compress:true});
       const PW=420,PH=297,M=8;
       for(let i=0;i<pages.length;i++){
         pages[i].style.zoom="";
-        const c=await window.html2canvas(pages[i],{scale:2,backgroundColor:"#ffffff",logging:false});
+        const c=await H2C(pages[i],{scale:2,backgroundColor:"#ffffff",logging:false});
         let w=PW-M*2,h=c.height*w/c.width; if(h>PH-M*2){h=PH-M*2;w=c.width*h/c.height;}
         if(i>0)pdf.addPage("a3","landscape");
         pdf.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",(PW-w)/2,M,w,h);
       }
-      const blob=pdf.output("blob");
+      const bytes=pdf.output("arraybuffer");
       const fname=((state.name||"工程表").replace(/[\\/:*?"<>|]/g,"_"))+(cust?"_お客様用":"_現場用")+".pdf";
-      if(PDFSAVE){ await PDFSAVE(fname,blob); toast("PDFを用意しました。保存してから開いて印刷してください"); }
-      else toast("この画面ではPDFを保存できません");
+      holder.classList.remove("pdfmode","cust"); holder.removeAttribute("style"); holder.innerHTML="";
+      if(!PDFSAVE){ toast("この画面ではPDFを保存できません"); return; }
+      const go=await ask("PDFができました（"+pages.length+"ページ・"+Math.round(bytes.byteLength/1024)+"KB）。「保存する」を押すと保存の確認が出ます。保存したPDFを開いて印刷してください。","保存する","やめる");
+      if(!go){ toast("保存をやめました"); return; }
+      try{ await PDFSAVE(fname,bytes); toast("PDFを保存しました"); }
+      catch(e){ const c=(e&&(e.code||e.message))||String(e); toast(c==="declined"||c==="cancelled"?"保存をやめました":"PDFを保存できませんでした（"+c+"）"); }
     }catch(e){
-      toast(e&&e.code==="declined"?"保存をやめました":"PDFを作れませんでした。もう一度押してください");
+      const c=(e&&(e.code||e.message))||(e&&e.type==="error"?"部品を読み込めませんでした":String(e));
+      toast("PDFを作れませんでした（"+c+"）");
     }finally{
       holder.classList.remove("pdfmode","cust"); holder.removeAttribute("style"); holder.innerHTML="";
       btn.textContent=label; bs.forEach(b=>b.disabled=false); pdfBusy=false;
