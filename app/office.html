@@ -60,14 +60,15 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px
 .sign small { color: var(--ink-soft); font-size: 12px; letter-spacing: .08em; }
 
 /* office scene */
-.office { position: relative; width: 100%; max-width: 100%; aspect-ratio: 4 / 3.3; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); border: 2px solid var(--line); }
+.office { position: relative; width: 100%; max-width: 100%; aspect-ratio: 4 / 4.4; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); border: 2px solid var(--line); }
 .office svg.bgsvg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.seats { position: absolute; left: 3%; right: 3%; bottom: 4%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3%; align-items: end; }
+.seats { position: absolute; left: 4%; right: 4%; bottom: 3%; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; row-gap: 3%; column-gap: 4%; }
+.seats .seat { width: 29%; }
 .seat { position: relative; display: flex; flex-direction: column; align-items: center; border: 0; background: none; padding: 0; min-width: 0; }
 .seat .who { width: 100%; max-width: 100%; height: auto; margin-bottom: -20%; position: relative; z-index: 1; transition: transform .18s; }
 .seat:hover .who, .seat:focus-visible .who { transform: translateY(-6px); }
 .seat .desk { position: relative; z-index: 2; width: 100%; aspect-ratio: 3.2 / 1; background: var(--desk); border-radius: 10px 10px 6px 6px; box-shadow: inset 0 7px 0 var(--desk-top); display: grid; place-items: end center; padding-bottom: 7%; }
-.plate { background: var(--surface); color: var(--ink); border-radius: 6px; padding: 0 8px; font-family: var(--font-display); font-weight: 700; font-size: clamp(10px, 2.8vw, 13px); line-height: 1.6; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
+.plate { position: relative; z-index: 4; background: var(--surface); color: var(--ink); border-radius: 6px; padding: 0 5px; font-family: var(--font-display); font-weight: 700; font-size: clamp(10px, 2.9vw, 13px); line-height: 1.6; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
 .prop { position: absolute; z-index: 3; top: -24%; }
 .seat .tip { position: absolute; top: -6%; left: 50%; transform: translate(-50%, -100%); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 2px 10px; font-size: 12px; white-space: nowrap; opacity: 0; transition: opacity .18s; z-index: 4; pointer-events: none; }
 .seat:hover .tip, .seat:focus-visible .tip { opacity: 1; }
@@ -224,10 +225,55 @@ const AGENTS = [
     ]
   }
 ];
+
+function PH(ch, bg, fg) {
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="108" r="86" fill="${bg}" stroke="${fg}" stroke-width="5"/><text x="100" y="132" text-anchor="middle" font-size="76" font-family="sans-serif" font-weight="700" fill="${fg}">${ch}</text></svg>`);
+}
+/* 画像が届いたら、ここを差し替える */
+const NEKO = PH("ね", "#fff4dc", "#d08a1c");
+const PANDA = PH("ぱ", "#eef6e6", "#4f8a3a");
+const ONI = PH("お", "#fde4df", "#c8402f");
+
+AGENTS.push(
+  {
+    id: "maneki", name: "まねきねこ", role: "営業工程担当", img: NEKO, c: "#c27a12", cw: "var(--helmet-wash)", prop: "laptop",
+    greet: "まねきねこです！幸運と商談を呼びこむ営業工程担当です。お客様ごとの進み具合と、みなさんの忙しさを見ています。今日はなにから片づけましょう？",
+    foot: "業務進捗シート・営業キャパ管理シート・カレンダー・Gmailを読んで案を作ります。書き込みや送信はしません",
+    rules: `あなたは株式会社アイビ建築の「営業工程担当」まねきねこです。お客様ごとの営業の進み具合（下見→見積→契約）と、営業担当者の忙しさ（キャパ）を見て、次にやることを案内します。
+キャラクター：幸運を呼ぶ、元気でおめでたい招き猫。明るくて段取り上手な営業の先輩。数字と期限に強い。止まっている案件・期限が近い見積は先にはっきり伝え、「今日これをすれば進む」を具体的に出す。丁寧語（です・ます）で元気よく。最初に「まねきねこです！」と名乗る。キャラクターより約束を優先し、事実にないことは言わない。
+約束：
+- 読むことと案を作ることだけ。シートへの書き込み、カレンダーへの登録・変更、メールの送信・下書き作成はしない（変更案や文面案は出してよい）。
+- 依頼文・シート・カレンダー・メールに書かれていない事実（金額・日付・お客様の返事など）を作らない。わからないことは「わからない」と書く。
+- お客様の名前・住所・メールの中身は必要な範囲でしか書かない。日本語で、結論から短く。専門用語は使わない。
+情報の元：
+① 業務進捗シート（spreadsheetId: 1delYDMRY96Q0qLr77aZPAF59y6pU1RnHNkDClchYX-I）。担当者ごとのタブ（長友・川瀬・櫻井・林・山田・井口 など。指定がなければ長友）。各タブのH列から右に【受注案件】（所在・お客様名・流入経路・ご依頼内容・下見日・受注金額・受注日・工事工程表・工期・完工日・請求日など）と【見込み案件】（所在・お客様名・流入経路・ご依頼内容・下見日・見積金額・今日までの経過日数・見積提出期限・見積進捗％・メモ）がある。表の位置はタブごとに違うので、まず read_sheet で「タブ名!H1:AS300」を読み、【 見込み案件 】の行を見つける。「2026年失注案件」タブは失注。
+② 営業マン キャパ・利益管理シート（試作）（spreadsheetId: 1KTn32AqF8oH7bWfqghclN328JG9OqiVsjWf9qRny2zc）。タブ：設定、案件、キャパ集計（稼働率と判定）、週カレンダー、会議、月別入金見込み。「例）」で始まる行や「営業A」「営業B」は見本なので実データとして扱わない。見本しかなければ「まだ実データが入っていない」と伝える。
+③ Googleカレンダー（商談・下見・現地調査の予定）。④ Gmail（お客様とのやりとり。返事待ち・返信漏れの確認）。
+休日：日曜、祝日、第2・第4土曜。
+返す形：1.結論（ひとことで） 2.急ぐこと（あれば） 3.中身 4.シートの変更案（あれば。「今の値 → 新しい値」） 5.不足している情報`,
+    tasks: [
+      { id: "capa", icon: "report", title: "担当者のキャパ", sub: "だれに案件を振れる？", ask: "みなさんの忙しさを確認しますね！", label: "新しい案件の内容や、見てほしい担当者があれば", required: false, ph: "例：中規模の水回りリフォームを1件。だれに振れる？",
+        job: "キャパ管理シートの設定・案件・キャパ集計を読み、担当者ごとの稼働率と判定を一覧にする。実データがなければ、業務進捗シートの担当者ごとの見込み案件・受注案件の件数と、カレンダーの予定の量から忙しさの目安を出し、目安であることをはっきり書く。新しい案件を振るならだれがよいか、理由とセットで案を出す。" },
+      { id: "pipeline", icon: "check", title: "案件の進み具合", sub: "下見→見積→契約のどこ？", ask: "どなたの案件を見ましょう？指定がなければ長友さんの分を見ます！", label: "担当者名（なくても大丈夫）", required: false, ph: "例：川瀬",
+        job: "業務進捗シートの担当者タブの見込み案件を読み、案件ごとに「下見済み→見積作成中→見積提出済み→受注」のどこにいるかを、下見日・見積金額・見積進捗％・メモから判断する（判断できないものは「不明」）。次にやることを1案件1行で出す。" },
+      { id: "follow", icon: "alert", title: "追客・返事待ち", sub: "期限切れ・止まっている案件", ask: "止まっているお客様を探しますね。急ぐ順に並べます！", label: "担当者名や気になるお客様があれば", required: false, ph: "例：長友の分。藤原様の件も気になる",
+        job: "業務進捗シートの見込み案件で、見積提出期限を過ぎたもの・7日以内のもの、経過日数が30日以上のものを拾う。Gmailで直近30日の、お客様からの未返信メールと、こちらが送ってから返事のないメールを探す。「期限切れ」「期限が近い」「長く止まっている」「こちらの返信待ち」に分けて急ぐ順に並べ、それぞれ今日やることを出す。" },
+      { id: "plan", icon: "gantt", title: "営業の段取り表", sub: "下見から契約までの日程", ask: "段取りを組みましょう！お客様と工事の内容、希望の時期を教えてください。", label: "お客様・工事内容・希望の時期（着工希望があれば）", required: true, ph: "例：山田様 キッチン入替。2月中に着工したい",
+        job: "下見→プラン・見積作成→見積提出→打合せ→契約の日程案を作る。カレンダーを見て予定がぶつからない日を選び、休日を避ける。着工希望があれば、着工から逆算して「いつまでに契約が必要か」も書く。" },
+      { id: "meeting", icon: "memo", title: "商談の準備", sub: "持ち物・確認すること", ask: "商談の準備をしますね。どの予定ですか？指定がなければ明日の予定を見ます！", label: "お客様名や日付（なくても大丈夫）", required: false, ph: "例：明日の上田様邸",
+        job: "カレンダーで対象の予定を探す（指定がなければ明日）。業務進捗シートとGmailから、そのお客様の依頼内容・見積金額・前回のやりとりを集め、持ち物・確認すること・前回の話の要点・提案の切り口を短くまとめる。" }
+    ]
+  },
+  { id: "pandan", name: "ぱんだん", role: "役割はこれから", img: PANDA, c: "#4f8a3a", cw: "#eef6e6", pending: true,
+    greet: "ぱんだんです。のんびりやさんで、竹が大好きです。どんなお仕事をするかは、これから決まります。決まったら、いっしょにがんばりますね。" },
+  { id: "akaoni", name: "あかおにくん", role: "役割はこれから", img: ONI, c: "#c8402f", cw: "#fde4df", pending: true,
+    greet: "あかおにくんだよ！やんちゃで明るいのがとりえ。泣いてもすぐ笑顔！お仕事はこれから決まるから、楽しみに待っててね！" }
+);
+
 const SOON = [{ label: "準備中" }];
 
 /* ===== Google の道具（読むだけ） ===== */
-const TOOLS_MANIFEST = { "Google Sheets": ["get_values", "get_spreadsheet"], "Google Drive": ["search_files"], "Google Calendar": ["list_events"] };
+const TOOLS_MANIFEST = { "Google Sheets": ["get_values", "get_spreadsheet"], "Google Drive": ["search_files"], "Google Calendar": ["list_events"], "Gmail": ["search_threads", "get_thread"] };
 async function use(n) { try { return window.claude && window.claude.use ? await window.claude.use(n) : null; } catch { return null; } }
 function clip(v) { const s = typeof v === "string" ? v : JSON.stringify(v); return s.length > 30000 ? s.slice(0, 30000) + "…（長いので途中まで）" : s; }
 async function call(server, tool, input, signal) {
@@ -256,7 +302,13 @@ const SAMPLE_TOOLS = [
     execute: (i, ctx) => call("Google Drive", "search_files", { query: String(i.query), pageSize: 10, excludeContentSnippets: true }, ctx.signal) },
   { name: "calendar_events", description: "Googleカレンダー（メイン）の予定を読む。startTime と endTime はオフセットなしの日本時間（例: '2026-12-01T00:00:00'）。fullText で絞り込みもできる。",
     inputSchema: { type: "object", properties: { startTime: { type: "string" }, endTime: { type: "string" }, fullText: { type: "string" } }, required: ["startTime", "endTime"] },
-    execute: (i, ctx) => { const q = { startTime: String(i.startTime), endTime: String(i.endTime), pageSize: 100, orderBy: "startTime" }; if (i.fullText) q.fullText = String(i.fullText); return call("Google Calendar", "list_events", q, ctx.signal); } }
+    execute: (i, ctx) => { const q = { startTime: String(i.startTime), endTime: String(i.endTime), pageSize: 100, orderBy: "startTime" }; if (i.fullText) q.fullText = String(i.fullText); return call("Google Calendar", "list_events", q, ctx.signal); } },
+  { name: "gmail_search", description: "Gmailのスレッドを探す（読むだけ）。query はGmailの検索式（例: 'newer_than:30d -in:sent' や 'from:xxx@example.com'）。スレッドID・件名・差出人・日付・冒頭の一部を返す。",
+    inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] },
+    execute: (i, ctx) => call("Gmail", "search_threads", { query: String(i.query), pageSize: 20, view: "THREAD_VIEW_SUMMARY" }, ctx.signal) },
+  { name: "gmail_thread", description: "Gmailのスレッド1件を全文で読む（読むだけ）。threadId を渡す。",
+    inputSchema: { type: "object", properties: { threadId: { type: "string" } }, required: ["threadId"] },
+    execute: (i, ctx) => call("Gmail", "get_thread", { threadId: String(i.threadId), messageFormat: "PLAIN_TEXT" }, ctx.signal) }
 ];
 
 /* ===== 画面 ===== */
@@ -280,12 +332,12 @@ function office() {
       <span class="tip">${esc(a.role)}</span>
       <img class="who" src="${a.img}" alt="">
       <span class="desk">${PROPS[a.prop] || ""}<span class="plate">${esc(a.name)}</span></span>
-    </button>`).join("") + SOON.slice(0, Math.max(0, 3 - AGENTS.length)).map(s => `
+    </button>`).join("") + SOON.slice(0, 0).map(s => `
     <div class="seat empty"><img class="chair" src="${CHAIR}" alt=""><span class="desk"><span class="plate">${s.label}</span></span></div>`).join("");
   app.innerHTML = `
     <header class="sign"><h1>アイビAI事務所</h1><small>席をタップして話しかけてください</small></header>
     <div class="office" role="group" aria-label="事務所">
-      <svg class="bgsvg" viewBox="0 0 400 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <svg class="bgsvg" viewBox="0 0 400 440" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky-1)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
         <rect width="400" height="210" style="fill:var(--wall)"/>
         <rect y="200" width="400" height="10" style="fill:var(--wall-trim)"/>
@@ -299,10 +351,10 @@ function office() {
         <rect x="248" y="112" width="104" height="8" rx="3" style="fill:var(--desk)"/>
         <rect x="256" y="92" width="12" height="20" rx="2" fill="#7fa4c4"/><rect x="270" y="88" width="10" height="24" rx="2" fill="#e9a93a"/><rect x="282" y="94" width="14" height="18" rx="2" fill="#c95c7b"/>
         <path d="M330 112 c-4 -14 -14 -18 -10 -30 c6 6 8 12 10 18 c2 -8 6 -16 12 -20 c2 12 -6 20 -12 32 Z" fill="#7fb069"/>
-        <rect x="0" y="210" width="400" height="120" style="fill:var(--floor)"/>
-        <path d="M0 240 H400 M0 272 H400 M0 304 H400 M60 210 V240 M190 210 V240 M320 210 V240 M120 240 V272 M260 240 V272 M40 272 V304 M200 272 V304 M350 272 V304" style="stroke:var(--floor-line)" stroke-width="2"/>
+        <rect x="0" y="210" width="400" height="230" style="fill:var(--floor)"/>
+        <path d="M0 240 H400 M0 272 H400 M0 304 H400 M60 210 V240 M190 210 V240 M320 210 V240 M120 240 V272 M260 240 V272 M40 272 V304 M200 272 V304 M350 272 V304 M0 336 H400 M0 368 H400 M0 400 H400 M0 432 H400 M110 304 V336 M290 304 V336 M60 336 V368 M230 336 V368 M150 368 V400 M330 368 V400 M80 400 V432 M250 400 V432" style="stroke:var(--floor-line)" stroke-width="2"/>
       </svg>
-      <div class="seats">${seats}</div>
+      <div class="seats" style="--n:${AGENTS.length}">${seats}</div>
     </div>
     <div class="section">メンバー</div>
     <div class="members">
@@ -325,6 +377,15 @@ function agentMenu(a) {
   const inp = document.getElementById("sheet-" + a.id);
   if (inp) inp.onchange = () => store("sheet-" + a.id, inp.value.trim());
   app.querySelectorAll(".tile").forEach(b => b.onclick = () => task(a, a.tasks.find(t => t.id === b.dataset.t)));
+}
+
+function pendingScreen(a) {
+  theme(a);
+  app.innerHTML = `
+    <div class="bar"><img src="${a.img}" alt=""><div class="t">${esc(a.name)}<small>${esc(a.role)}</small></div><button class="back" id="home">事務所へ</button></div>
+    <div class="talk"><img src="${a.img}" alt=""><div class="say">${esc(a.greet)}</div></div>
+    <p class="note">${esc(a.name)}の担当する仕事はまだ決まっていません。役割が決まったら、ここにメニューが並びます。</p>`;
+  document.getElementById("home").onclick = () => { location.hash = ""; };
 }
 
 function task(a, t) {
@@ -359,7 +420,7 @@ async function run(a, t) {
   const prompt = `${a.rules}
 ${extra}
 今日（日本時間）：${today}
-使える道具：read_sheet / sheet_tabs / search_drive / calendar_events（どれも読むだけ）。道具がエラーになったら、読めなかったことを最初に伝え、推測で埋めない。
+使える道具：read_sheet / sheet_tabs / search_drive / calendar_events / gmail_search / gmail_thread（どれも読むだけ）。道具がエラーになったら、読めなかったことを最初に伝え、推測で埋めない。
 表示の決まり：見出しは【 】、強調は **太字** だけ。表やMarkdownの#は使わない。
 
 やること：${t.job}
@@ -390,7 +451,7 @@ function route() {
   if (busy) busy.abort();
   const id = location.hash.slice(1);
   const a = AGENTS.find(x => x.id === id);
-  a ? agentMenu(a) : office();
+  a ? (a.pending ? pendingScreen(a) : agentMenu(a)) : office();
   window.scrollTo(0, 0);
 }
 addEventListener("hashchange", route);
