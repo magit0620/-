@@ -1039,6 +1039,147 @@
   }
   window.addEventListener("beforeprint",()=>preparePrint(false));
   window.addEventListener("afterprint",cleanupPrint);
+  // ===== 印刷用シート（参考フォーマット：A3横） =====
+  const PDF_W=1587, PDF_H=1123;
+  const PDFCSS=`
+  .pp{width:${PDF_W}px;height:${PDF_H}px;background:#fff;color:#1b2733;font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;padding:34px 44px 22px;box-sizing:border-box;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .pp *{box-sizing:border-box}
+  .pp-top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding-bottom:12px;border-bottom:4px solid #1e3a5f}
+  .pp-kind{font-size:13px;letter-spacing:.5em;color:#56697a;margin-bottom:6px}
+  .pp-title{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .pp-title h1{margin:0;font-size:31px;font-weight:700;letter-spacing:.04em;line-height:1.25}
+  .pp-badge{background:#1e3a5f;color:#fff;font-size:19px;font-weight:700;padding:4px 16px;border-radius:7px;white-space:nowrap}
+  .pp-meta{display:grid;grid-template-columns:auto auto;gap:3px 22px;font-size:14px;align-items:baseline;flex:none}
+  .pp-meta dt{color:#56697a;font-size:12px;letter-spacing:.3em;margin:0}
+  .pp-meta dd{margin:0;font-weight:500;white-space:nowrap}
+  .pp-meta .co{grid-column:1 / -1;text-align:right;font-weight:700;font-size:16px;margin-top:2px}
+  .pp-meta .pg{display:inline-flex;gap:10px;align-items:center;margin-left:14px;color:#56697a}
+  .pp-ov{display:grid;grid-template-columns:300px 1fr;gap:24px;padding:12px 0 14px;align-items:center}
+  .pp-ov-l b{display:block;font-size:14px;margin-bottom:4px}
+  .pp-ov-l span{display:block;font-size:12px;color:#56697a;line-height:1.7}
+  .pp-ov-r{position:relative;background:#f4f6f9;border-radius:4px}
+  .pp-ov-m{position:absolute;top:0;bottom:0;border-left:1px solid #c4cdd6;font-size:10px;color:#56697a;padding:2px 4px}
+  .pp-ov-b{position:absolute;height:9px;border-radius:5px;background:#c4cbd4}
+  .pp-ov-b.on{background:#1e3a5f}
+  .pp-ov-t{position:absolute;font-size:10.5px;color:#8493a2;white-space:nowrap;line-height:1}
+  .pp-ov-t.on{color:#1b2733;font-weight:700}
+  .pp-ov-box{position:absolute;top:2px;bottom:2px;border:1.5px dashed #1e3a5f;border-radius:3px;background:rgba(30,58,95,.04)}
+  .pp-tb{border:1.5px solid #1e3a5f;border-collapse:collapse;table-layout:fixed;width:100%}
+  .pp-tb th,.pp-tb td{padding:0;border-bottom:1px solid #dde4ea}
+  .pp-tb thead th{background:#1e3a5f;color:#fff;font-weight:700;font-size:14px;letter-spacing:.2em}
+  .pp-tb td.cat{font-weight:700;font-size:15px;padding:0 10px;vertical-align:middle;border-right:1px solid #dde4ea;border-left:6px solid var(--cc)}
+  .pp-tb td.cat small{display:block;font-weight:400;font-size:11px;color:#56697a;letter-spacing:0;margin-top:2px}
+  .pp-tb td.nm{font-size:13.5px;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid #dde4ea}
+  .pp-tb td.nm em{font-style:normal;color:#8493a2;font-size:11px;margin-left:8px}
+  .pp-tb td.pd{font-size:13px;text-align:center;border-right:1px solid #dde4ea;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pp-tb td.dy{font-size:13px;text-align:center;border-right:1.5px solid #1e3a5f;font-variant-numeric:tabular-nums}
+  .pp-tb tr.all td{background:#eef1f5;font-weight:700}
+  .pp-tb tr.all td.cat{border-left:6px solid #1e3a5f}
+  .pp-tb tr.first td{border-top:1.5px solid #1e3a5f}
+  .gg{position:relative;height:100%}
+  .gg i.c{position:absolute;top:0;bottom:0;border-left:1px solid #e6ebf0}
+  .gg i.off{background:#e8edf3}
+  .gg i.m{border-left:1.5px solid #8a99aa}
+  .gg .bar{position:absolute;top:22%;bottom:22%;border-radius:5px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .gg .bar u{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 4px,rgba(255,255,255,0) 4px 8px)}
+  .gg .bar span{position:relative;color:#fff;font-size:12px;font-weight:700;white-space:nowrap;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  .gg .lbl{position:absolute;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;white-space:nowrap;color:#1b2733}
+  .dh{display:grid;font-variant-numeric:tabular-nums}
+  .dh .mo{font-size:12px;font-weight:700;text-align:left;padding:3px 6px;border-left:1.5px solid #8a99aa;white-space:nowrap;overflow:hidden;letter-spacing:.05em}
+  .dh .d{background:#fff;color:#1b2733;text-align:center;border-left:1px solid #dde4ea;line-height:1.15;padding:3px 0 2px;letter-spacing:0}
+  .dh .d b{display:block;font-size:14px}
+  .dh .d s{display:block;text-decoration:none;font-size:10.5px;font-weight:500;color:#56697a}
+  .dh .d.sat b,.dh .d.sat s{color:#1f5fbf}
+  .dh .d.red b,.dh .d.red s{color:#d0313d}
+  .dh .d.off{background:#e8edf3}
+  .pp-leg{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-top:auto;padding-top:10px;font-size:12px;color:#3b4a58;border-bottom:1px solid #dde4ea;padding-bottom:8px}
+  .pp-leg div{display:flex;align-items:center;gap:18px}
+  .pp-leg i{display:inline-block;width:42px;height:12px;border-radius:3px;vertical-align:middle;margin-right:8px}
+  .pp-foot{display:flex;justify-content:space-between;font-size:12.5px;padding-top:8px;color:#1b2733}
+  .pp-foot b{margin-right:16px}`;
+  function pdfPages(cust){
+    const W2=["日","月","火","水","木","金","土"];
+    const md=d=>(d.getMonth()+1)+"/"+d.getDate();
+    const ymdw=d=>d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日（"+W2[d.getDay()]+"）";
+    const ymd=d=>d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日";
+    const range=(a,b)=>a===b?md(dAt(a)):md(dAt(a))+"～"+md(dAt(b));
+    const rows=[];
+    state.cats.forEach((c,ci)=>c.tasks.forEach(t=>rows.push({c,ci,t,s:t.start,e:barEndIndex(t)})));
+    if(!rows.length) return [];
+    const min=Math.min(...rows.map(r=>r.s)), max=Math.max(...rows.map(r=>r.e));
+    const m0=Math.max(0,min); let work=0; for(let i=m0;i<=max;i++) if(isWorkday(dAt(i))) work++;
+    const cats=state.cats.map((c,ci)=>{const rr=rows.filter(r=>r.ci===ci); return rr.length?{c,ci,s:Math.min(...rr.map(r=>r.s)),e:Math.max(...rr.map(r=>r.e))}:null;}).filter(Boolean);
+    const span=max-min+1, PER=35, n=Math.max(1,Math.ceil(span/PER)), per=Math.max(21,Math.ceil(span/n));
+    const created=state.createdText||(state.createdDate?ymd(parseISO(state.createdDate)):"");
+    const name=state.name||"工程表";
+    const pages=[];
+    for(let p=0;p<n;p++){
+      const ws=min+p*per, we=ws+per-1;
+      const pr=rows.filter(r=>r.e>=ws&&r.s<=we);
+      const days=we-ws+1;
+      const LEFT=[170,250,140,62], leftW=LEFT.reduce((a,b)=>a+b,0);
+      const tableW=PDF_W-88, colW=(tableW-leftW-3)/days;
+      // header days
+      let mo="",dd=""; let segStart=ws;
+      for(let i=ws;i<=we+1;i++){
+        if(i===we+1||(i>ws&&dAt(i).getDate()===1)){ const d0=dAt(segStart); mo+=`<div class="mo" style="grid-column:span ${i-segStart}">${(i-segStart)>=3?d0.getFullYear()+"年 "+(d0.getMonth()+1)+"月":""}</div>`; segStart=i; }
+        if(i<=we){ const d=dAt(i),w=d.getDay(),hn=holidayName(d),off=!isWorkday(d);
+          const cls=(off?" off":"")+((w===0||hn||(off&&w===6))?" red":(w===6?" sat":""));
+          dd+=`<div class="d${cls}"><b>${d.getDate()}</b><s>${hn?"祝":W2[w]}</s></div>`; }
+      }
+      const cols=`grid-template-columns:repeat(${days},1fr)`;
+      const nRows=pr.length+1;
+      const ovH=Math.min(150,Math.max(46,cats.length*14+20));
+      const bodyH=PDF_H-34-22-92-(ovH+28)-62-74;
+      const rowH=Math.max(19,Math.min(52,Math.floor(bodyH/nRows)));
+      const grid=()=>{ let s=""; for(let i=ws;i<=we;i++){ const d=dAt(i); s+=`<i class="c${!isWorkday(d)?" off":""}${i>ws&&d.getDate()===1?" m":""}" style="left:${((i-ws)*colW).toFixed(2)}px;width:${colW.toFixed(2)}px"></i>`; } return s; };
+      const GRID=grid();
+      const bar=(s,e,color,label,wh)=>{
+        const a=Math.max(s,ws), b=Math.min(e,we); if(b<a) return "";
+        const L=(a-ws)*colW, Wd=(b-a+1)*colW-3; let hat="";
+        if(!wh) for(let i=a;i<=b;i++) if(!isWorkday(dAt(i))) hat+=`<u style="left:${((i-a)*colW).toFixed(2)}px;width:${colW.toFixed(2)}px"></u>`;
+        const tw=label.length*12.5+14; const inside=tw<=Wd;
+        let out=`<div class="bar" style="left:${(L+1.5).toFixed(2)}px;width:${Math.max(6,Wd).toFixed(2)}px;background:${color}">${hat}${inside?`<span>${escapeHtml(label)}</span>`:""}</div>`;
+        if(!inside){ const after=L+Wd+8; const room=(days*colW)-after; out+= room>=tw-6?`<span class="lbl" style="left:${after.toFixed(2)}px">${escapeHtml(label)}</span>`:`<span class="lbl" style="right:${(days*colW-L+6).toFixed(2)}px">${escapeHtml(label)}</span>`; }
+        return out;
+      };
+      let body=`<tr class="all" style="height:${rowH}px"><td class="cat">全体工程</td><td class="nm">${escapeHtml(name)}</td><td class="pd">${range(m0,max)}</td><td class="dy">${work}日</td><td><div class="gg" style="height:${rowH}px">${GRID}${bar(m0,max,"#1e3a5f",n>1?"全体工程":name,false)}</div></td></tr>`;
+      let first=true;
+      cats.forEach(k=>{
+        const tr=pr.filter(r=>r.ci===k.ci); if(!tr.length) return;
+        const tint=k.c.color+"14";
+        tr.forEach((r,j)=>{
+          const vend=!cust&&r.t.vendor?`<em>${escapeHtml(r.t.vendor)}</em>`:"";
+          body+=`<tr class="${j===0?"first":""}" style="height:${rowH}px">${j===0?`<td class="cat" rowspan="${tr.length}" style="--cc:${k.c.color};background:${tint}">${escapeHtml(k.c.name)}<small>${range(k.s,k.e)}</small></td>`:""}<td class="nm">${escapeHtml(r.t.name)}${vend}</td><td class="pd">${range(r.s,r.e)}</td><td class="dy">${r.t.dur}日</td><td><div class="gg" style="height:${rowH}px">${GRID}${bar(r.s,r.e,k.c.color,r.t.name,r.t.workHolidays)}</div></td></tr>`;
+        });
+      });
+      // overview
+      const ovW=PDF_W-88-324, sc=ovW/span, X=i=>((i-min)*sc);
+      let ov=""; let mi=min;
+      for(let i=min;i<=max;i++){ const d=dAt(i); if(i===min||d.getDate()===1){ ov+=`<span class="pp-ov-m" style="left:${X(i).toFixed(1)}px">${d.getMonth()+1}月</span>`; } }
+      const lineH=(ovH-18)/Math.max(1,cats.length);
+      cats.forEach((k,idx)=>{ const on=k.e>=ws&&k.s<=we; const y=16+idx*lineH+(lineH-9)/2; const x1=X(k.s), x2=X(k.e+1);
+        ov+=`<i class="pp-ov-b${on?" on":""}" style="left:${x1.toFixed(1)}px;width:${Math.max(4,x2-x1).toFixed(1)}px;top:${y.toFixed(1)}px;${on?`background:${k.c.color}`:""}"></i>`;
+        const txt=escapeHtml(k.c.name)+"　"+range(k.s,k.e); const tl=x2+6, fits=ovW-tl>=txt.length*10;
+        ov+=`<span class="pp-ov-t${on?" on":""}" style="${fits?`left:${tl.toFixed(1)}px`:`right:${(ovW-x1+6).toFixed(1)}px`};top:${(y-0.5).toFixed(1)}px">${txt}</span>`; });
+      if(n>1){ const bx1=X(Math.max(ws,min)), bx2=X(Math.min(we,max)+1); ov+=`<i class="pp-ov-box" style="left:${(bx1-2).toFixed(1)}px;width:${(bx2-bx1+4).toFixed(1)}px"></i>`; }
+      const badge=n>1?`<span class="pp-badge">${md(dAt(ws))}～${md(dAt(Math.min(we,max)))}</span>`:"";
+      pages.push(`<div class="pp">
+        <div class="pp-top"><div><div class="pp-kind">工程表</div><div class="pp-title"><h1>${escapeHtml(name)}</h1>${badge}</div></div>
+          <dl class="pp-meta"><dt>工期</dt><dd>${ymdw(dAt(m0))} ～ ${(dAt(max).getMonth()+1)}月${dAt(max).getDate()}日（${W2[dAt(max).getDay()]}）<span class="pg">${p+1} / ${n}</span></dd>
+          <dt>着工日</dt><dd>${ymd(parseISO(state.start))}</dd><dt>作成日</dt><dd>${escapeHtml(created)}</dd><dd class="co">${escapeHtml(state.company||"")}</dd></dl></div>
+        <div class="pp-ov"><div class="pp-ov-l"><b>全体の流れ</b><span>${md(dAt(m0))}（${W2[dAt(m0).getDay()]}）～${md(dAt(max))}（${W2[dAt(max).getDay()]}）</span><span>工期${max-m0+1}日（稼働${work}日）</span></div>
+          <div class="pp-ov-r" style="height:${ovH}px;width:${ovW}px">${ov}</div></div>
+        <table class="pp-tb"><colgroup>${LEFT.map(w=>`<col style="width:${w}px">`).join("")}<col></colgroup>
+          <thead><tr><th rowspan="2">工　種</th><th rowspan="2">作業内容</th><th rowspan="2">期　間</th><th rowspan="2">日数</th><th style="padding:0;letter-spacing:0"><div class="dh" style="${cols}">${mo}</div></th></tr>
+          <tr><th style="padding:0;letter-spacing:0"><div class="dh" style="${cols}">${dd}</div></th></tr></thead>
+          <tbody>${body}</tbody></table>
+        <div class="pp-leg"><div><span><i style="background:#5f7186"></i>作業期間</span><span><i class="hsw" style="background-color:#5f7186"></i>バー内の斜線：作業なしの日</span><span><i style="background:#e8edf3;border:1px solid #c4cdd6"></i>当社休業日（土曜は青字の日のみ稼働）</span></div><span>※ 工程は予定です。天候・現場状況等により前後する場合があります。</span></div>
+        <div class="pp-foot"><span><b>${escapeHtml(state.company||"")}</b>${state.manager?"担当　"+escapeHtml(state.manager):""}</span><span>${escapeHtml(name)} 工程表　${p+1} / ${n}${cust?"":"（現場用）"}</span></div>
+      </div>`);
+    }
+    return pages;
+  }
   let PDFSAVE=null; try{ PDFSAVE=(window.parent&&window.parent!==window&&window.parent.KOUTEI_PDF)||null; }catch(_){ PDFSAVE=null; }
   function loadJs(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
   let pdfBusy=false;
@@ -1062,28 +1203,22 @@
         }
       }
       if(document.fonts&&document.fonts.ready) await document.fonts.ready;
-      const scEl=document.getElementById("scroller"); var keepX=scEl.scrollLeft, keepY=scEl.scrollTop, keepW=window.scrollY; scEl.scrollLeft=0; scEl.scrollTop=0; window.scrollTo(0,0);
-      updateDoc(); buildPrintPages(!!cust);
-      holder.classList.add("pdfmode"); holder.classList.toggle("cust",!!cust);
-      for(const im of holder.querySelectorAll("img.dfoot-logo")){
-        try{ const W=555,H=180; const src=im.getAttribute("src"); const img=new Image(); img.src=src; await img.decode();
-          const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.getContext("2d").drawImage(img,0,0,W,H);
-          im.src=cv.toDataURL("image/png"); await im.decode().catch(()=>{}); }catch(_){}
-      }
-      const pages=[...holder.querySelectorAll(".ppage")];
+      if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+      const htmls=pdfPages(!!cust);
+      if(!htmls.length){ toast("工程がありません"); return; }
+      const HP=(()=>{const c=document.createElement("canvas");c.width=c.height=8;const x=c.getContext("2d");x.strokeStyle="rgba(255,255,255,0.65)";x.lineWidth=2.2;x.beginPath();x.moveTo(-1,9);x.lineTo(9,-1);x.moveTo(-1,1);x.lineTo(1,-1);x.moveTo(7,9);x.lineTo(9,7);x.stroke();return c.toDataURL("image/png");})();
+      holder.innerHTML="<style>"+PDFCSS+".gg .bar u,.pp-leg i.hsw{background-image:url("+HP+");background-repeat:repeat;background-size:8px 8px}</style>"+htmls.join("");
+      holder.style.cssText="display:block;position:absolute;left:-40000px;top:0;width:"+PDF_W+"px";
+      const pages=[...holder.querySelectorAll(".pp")];
       const pdf=new JSPDF.jsPDF({orientation:"landscape",unit:"mm",format:"a3",compress:true});
-      const PW=420,PH=297,M=8;
       for(let i=0;i<pages.length;i++){
-        pages[i].style.zoom="";
-        const c=await H2C(pages[i],{scale:2,backgroundColor:"#ffffff",logging:false});
-        let w=PW-M*2,h=c.height*w/c.width; if(h>PH-M*2){h=PH-M*2;w=c.width*h/c.height;}
+        const c=await H2C(pages[i],{scale:2,backgroundColor:"#ffffff",logging:false,width:PDF_W,height:PDF_H,windowWidth:PDF_W});
         if(i>0)pdf.addPage("a3","landscape");
-        pdf.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",(PW-w)/2,M,w,h);
+        pdf.addImage(c.toDataURL("image/jpeg",0.9),"JPEG",0,0,420,297);
       }
       const bytes=pdf.output("arraybuffer");
       const fname=((state.name||"工程表").replace(/[\\/:*?"<>|]/g,"_"))+(cust?"_お客様用":"_現場用")+".pdf";
-      holder.classList.remove("pdfmode","cust"); holder.removeAttribute("style"); holder.innerHTML="";
-      scEl.scrollLeft=keepX; scEl.scrollTop=keepY; window.scrollTo(0,keepW);
+      holder.removeAttribute("style"); holder.innerHTML="";
       if(!PDFSAVE){ toast("この画面ではPDFを保存できません"); return; }
       const go=await ask("PDFができました（"+pages.length+"ページ・"+Math.round(bytes.byteLength/1024)+"KB）。「保存する」を押すと保存の確認が出ます。保存したPDFを開いて印刷してください。","保存する","やめる");
       if(!go){ toast("保存をやめました"); return; }
