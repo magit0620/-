@@ -1,0 +1,1184 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>工程表ジェネレーター</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap');
+  :root {
+    --bg:#eef1f4; --panel:#fff; --panel-2:#f7f9fb; --ink:#1b2733; --ink-soft:#56697a; --ink-faint:#8493a2;
+    --line:#dde4ea; --line-strong:#c4cdd6; --day-w:28px; --left-w:280px; --row-h:50px; --head-h:52px;
+    --weekend:#e9edf1; --sunday:#f7e7ea; --company:#f4ecdd; --today:#e8553c; --grid-week:#b7c2cd; --accent:#2f6f9f;
+    --shadow:0 1px 2px rgba(20,40,60,.10),0 8px 26px rgba(20,40,60,.07); font-synthesis:none;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#0e141a;--panel:#161f28;--panel-2:#1c2731;--ink:#e7edf2;--ink-soft:#9fb0bf;--ink-faint:#6d7e8d;
+    --line:#26333f;--line-strong:#35444f;--weekend:#1a2530;--sunday:#2a1d22;--company:#2a2618;--today:#ff6a4d;
+    --grid-week:#3a4b59;--accent:#5aa0d0;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.4);}
+  }
+  :root[data-theme="light"]{--bg:#eef1f4;--panel:#fff;--panel-2:#f7f9fb;--ink:#1b2733;--ink-soft:#56697a;--ink-faint:#8493a2;--line:#dde4ea;--line-strong:#c4cdd6;--weekend:#e9edf1;--sunday:#f7e7ea;--company:#f4ecdd;--today:#e8553c;--grid-week:#b7c2cd;--accent:#2f6f9f;--shadow:0 1px 2px rgba(20,40,60,.10),0 8px 26px rgba(20,40,60,.07);}
+  :root[data-theme="dark"]{--bg:#0e141a;--panel:#161f28;--panel-2:#1c2731;--ink:#e7edf2;--ink-soft:#9fb0bf;--ink-faint:#6d7e8d;--line:#26333f;--line-strong:#35444f;--weekend:#1a2530;--sunday:#2a1d22;--company:#2a2618;--today:#ff6a4d;--grid-week:#3a4b59;--accent:#5aa0d0;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.4);}
+
+  *{box-sizing:border-box;} body{margin:0;}
+  #app{font-family:"Noto Sans JP",-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;
+    color:var(--ink);background:var(--bg);min-height:100vh;padding:20px clamp(12px,3vw,30px) 20px;-webkit-font-smoothing:antialiased;}
+
+  .setup{max-width:940px;margin:4px auto 0;}
+  .setup h1{font-size:22px;font-weight:700;letter-spacing:.03em;margin:0 0 4px;}
+  .setup .lead{color:var(--ink-soft);font-size:13px;margin:0 0 22px;}
+  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+  .tpl{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:18px 18px 16px;cursor:pointer;text-align:left;box-shadow:var(--shadow);transition:border-color .15s,transform .12s;font:inherit;color:inherit;display:flex;flex-direction:column;gap:8px;}
+  .tpl:hover{transform:translateY(-2px);} .tpl.sel{border-color:var(--accent);}
+  .tpl .ic{font-size:24px;} .tpl .tt{font-size:15px;font-weight:700;letter-spacing:.02em;}
+  .tpl .dd{font-size:12px;color:var(--ink-soft);line-height:1.5;} .tpl .meta{font-size:11px;color:var(--ink-faint);margin-top:2px;font-variant-numeric:tabular-nums;}
+  .cloudbar{display:flex;align-items:center;gap:12px;margin:-10px 0 20px;}
+  .cstat{font-size:12px;color:var(--ink-faint);}
+  .cstat.on{color:#2f9f8a;font-weight:700;}
+  .std-h{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin:24px 0 4px;letter-spacing:.03em;}
+  .std-sub{font-size:11px;color:var(--ink-faint);margin:0 0 10px;}
+  .std-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+  .std{display:flex;align-items:center;gap:9px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit;box-shadow:var(--shadow);text-align:left;transition:border-color .12s;}
+  .std .ic2{font-size:18px;flex:none;}
+  .std .tx{flex:1;min-width:0;} .std .nm2{font-size:12.5px;font-weight:600;} .std .dd2{font-size:10px;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
+  .std .ck{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line-strong);flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
+  .std.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel));}
+  .std.sel .ck{background:var(--accent);border-color:var(--accent);}
+  .std.sel .ck::after{content:"✓";font-weight:800;}
+  .setup-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;margin-top:24px;}
+  .fld{display:flex;flex-direction:column;gap:5px;}
+  .fld label{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink-faint);text-transform:uppercase;}
+  .fld input{font:inherit;font-size:14px;padding:9px 11px;border:1.5px solid var(--line-strong);border-radius:8px;background:var(--panel);color:var(--ink);min-width:180px;}
+  .fld input:focus{outline:none;border-color:var(--accent);}
+  .btn{font:inherit;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;letter-spacing:.02em;}
+  .btn.primary{background:var(--accent);color:#fff;} .btn.primary:hover{filter:brightness(1.06);}
+  .btn.ghost{background:var(--panel);color:var(--ink-soft);border-color:var(--line-strong);}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--accent);}
+  .btn.sm{padding:6px 12px;font-size:12px;}
+
+  .toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;margin-bottom:14px;}
+  .toolbar .title{font-size:18px;font-weight:700;letter-spacing:.02em;border:none;background:none;color:var(--ink);padding:2px 4px;border-radius:6px;max-width:280px;}
+  .toolbar .title:focus{outline:1.5px solid var(--accent);}
+  .toolbar .tpl-badge{font-size:11px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:3px 9px;border-radius:20px;}
+  .toolbar .grp{display:flex;align-items:center;gap:6px;}
+  .toolbar .grp label{font-size:11px;color:var(--ink-faint);font-weight:600;letter-spacing:.04em;}
+  .toolbar input[type=date],.toolbar select{font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--line-strong);border-radius:7px;background:var(--panel);color:var(--ink);}
+  .spacer{margin-left:auto;}
+  .zoom{display:flex;align-items:center;gap:2px;}
+  .zoom button{width:26px;height:26px;border-radius:6px;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);cursor:pointer;font-size:15px;line-height:1;}
+  .zoom button:hover{border-color:var(--accent);}
+  .stats{display:flex;gap:16px;}
+  .stat .n{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;} .stat .l{font-size:10px;color:var(--ink-faint);letter-spacing:.07em;text-transform:uppercase;}
+
+  .editor{max-width:1400px;margin:0 auto;}
+  .docheader{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin:2px 2px 14px;}
+  .dh-l{display:flex;flex-direction:row;align-items:baseline;gap:8px 22px;flex-wrap:wrap;min-width:0;}
+  .dh-title{font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;font-size:28px;font-weight:700;letter-spacing:.03em;color:var(--ink);padding:2px 4px;border-radius:6px;line-height:1.2;}
+  .dh-title:focus{outline:1.5px solid var(--accent);}
+  .dh-term{font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;font-size:20px;font-weight:700;color:var(--ink-soft);font-variant-numeric:tabular-nums;padding:2px 4px;border-radius:6px;}
+  .dh-r{display:flex;align-items:baseline;gap:8px 24px;flex-wrap:wrap;font-size:17px;font-weight:600;color:var(--ink-soft);white-space:nowrap;flex:none;font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;}
+  .dh-term:focus{outline:1.5px solid var(--accent);border-radius:5px;}
+  .dh-edit{display:inline-block;min-width:90px;padding:0 5px;border-bottom:1px dashed var(--line-strong);border-radius:3px;color:var(--ink);font-weight:700;}
+  .dh-edit:focus{outline:1.5px solid var(--accent);border-bottom-color:transparent;}
+
+  .lib{max-width:940px;margin:30px auto 0;}
+  .lib-h{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--ink);}
+  .lib-g{margin-bottom:16px;}
+  .lib-gl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;}
+  .lib-item{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 10px 8px 14px;margin-bottom:6px;}
+  .lib-info{flex:1;min-width:0;} .lib-nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lib-sub{font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
+  .resume{max-width:940px;margin:26px auto 0;}
+  .resume .lib-item{border-color:var(--accent);border-width:1.5px;}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);background:var(--ink);color:var(--panel);font-size:12.5px;font-weight:600;padding:9px 18px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;transition:opacity .18s,transform .18s;z-index:120;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .board{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;}
+  .scroller{overflow:auto;overscroll-behavior:contain;}
+  .grid{position:relative;display:grid;grid-template-columns:var(--left-w) 1fr;min-width:min-content;}
+
+  .corner{position:sticky;left:0;top:0;z-index:30;background:var(--panel);border-right:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong);
+    height:var(--head-h);display:flex;align-items:flex-end;padding:0 14px 7px;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--ink-faint);}
+  .timehead{position:sticky;top:0;z-index:25;background:var(--panel);height:var(--head-h);border-bottom:1px solid var(--line-strong);}
+  .months{display:flex;height:22px;}
+  .month{border-right:1px solid var(--line-strong);font-size:11px;font-weight:700;color:var(--ink-soft);display:flex;align-items:center;padding-left:8px;letter-spacing:.03em;white-space:nowrap;overflow:hidden;}
+  .days{display:flex;height:30px;}
+  .day{width:var(--day-w);min-width:var(--day-w);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;}
+  .day .dn{font-size:11px;font-weight:600;line-height:1.1;} .day .wd{font-size:8.5px;color:var(--ink-faint);line-height:1.2;}
+  .day.sat .wd,.day.sat .dn{color:#3f83c4;} .day.sun .wd,.day.sun .dn,.day.hol .dn,.day.hol .wd{color:#d0596a;}
+  .day.off{background:var(--weekend);} .day.off.sun,.day.off.hol{background:var(--sunday);} .day.off.comp{background:var(--company);}
+  .day.weekstart{border-left:1px solid var(--grid-week);}
+
+  .labels{position:sticky;left:0;z-index:5;background:var(--panel);border-right:1px solid var(--line-strong);}
+  .catlabel{display:flex;align-items:center;gap:6px;padding:0 8px 0 10px;height:30px;background:var(--panel-2);border-bottom:1px solid var(--line);border-top:1px solid var(--line);font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--ink-soft);position:sticky;top:var(--head-h);z-index:7;}
+  .catlabel .cdot{width:9px;height:9px;border-radius:3px;flex:none;}
+  .catlabel .cnm{flex:1;padding:2px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .catlabel .cnm:focus{outline:1.5px solid var(--accent);}
+  .catlabel .addrow{border:none;background:none;color:var(--ink-faint);cursor:pointer;font-size:11px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+  .catlabel .addrow:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);}
+  .catlabel .cdel{opacity:0;width:18px;height:18px;border:none;background:none;cursor:pointer;color:var(--ink-faint);font-size:14px;border-radius:4px;line-height:1;}
+  .catlabel:hover .cdel{opacity:1;} .catlabel .cdel:hover{color:#d0596a;}
+
+  .rowlabel{height:var(--row-h);border-bottom:1px solid var(--line);border-left:4px solid var(--rc,transparent);display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 6px;position:relative;overflow:hidden;}
+  .rowlabel.dragsrc{opacity:.4;}
+  .rl1{display:flex;align-items:center;gap:4px;}
+  .rl2{display:flex;align-items:center;gap:5px;padding-left:36px;}
+  .grip{flex:none;width:13px;text-align:center;cursor:grab;color:var(--ink-faint);font-size:13px;line-height:1;letter-spacing:-2px;user-select:none;touch-action:none;}
+  .grip:active{cursor:grabbing;}
+  .lnk{flex:none;width:18px;height:18px;border:1px solid var(--line-strong);background:none;border-radius:4px;cursor:pointer;color:var(--ink-faint);font-size:10px;line-height:1;padding:0;}
+  .lnk.on{background:var(--accent);border-color:var(--accent);color:#fff;} .lnk:disabled{opacity:.25;cursor:default;}
+  .chk{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--line-strong);flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .chk.on{background:var(--accent);border-color:var(--accent);} .chk.on::after{content:"✓";color:#fff;font-size:10px;font-weight:800;}
+  .nm{flex:1;font-size:12.5px;padding:2px;border-radius:5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .nm:focus{outline:1.5px solid var(--accent);overflow:visible;}
+  .rowlabel.done .nm{text-decoration:line-through;color:var(--ink-faint);}
+  .dur{min-width:30px;text-align:right;font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums;flex:none;}
+  .del{width:18px;height:18px;flex:none;border:none;background:none;cursor:pointer;color:var(--ink-faint);font-size:14px;border-radius:4px;opacity:0;line-height:1;}
+  .rowlabel:hover .del{opacity:1;} .del:hover{color:#d0596a;}
+  .rl2 input{flex:1;min-width:0;font:inherit;font-size:10.5px;padding:2px 5px;border:1px solid transparent;border-radius:4px;background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--ink-soft);}
+  .rl2 input:focus{outline:none;border-color:var(--accent);background:var(--panel);color:var(--ink);}
+  .rl2 input::placeholder{color:var(--ink-faint);opacity:.7;}
+  .whol{flex:none;border:1px solid var(--line-strong);background:none;color:var(--ink-faint);cursor:pointer;font-size:9.5px;font-weight:700;padding:2px 5px;border-radius:4px;white-space:nowrap;}
+  .whol.on{background:#c9762f;border-color:#c9762f;color:#fff;}
+
+  .addcat{display:flex;align-items:center;height:34px;padding-left:12px;}
+  .addcat button{border:1px dashed var(--line-strong);background:none;color:var(--ink-soft);cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:7px;}
+  .addcat button:hover{border-color:var(--accent);color:var(--accent);}
+
+  .lane{position:relative;}
+  .rowline{position:absolute;left:0;right:0;height:var(--row-h);border-bottom:1px solid var(--line);}
+  .catband{position:absolute;left:0;right:0;height:30px;background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .colshade{position:absolute;top:0;bottom:0;width:var(--day-w);pointer-events:none;}
+  .colshade.weekstart{border-left:1px solid var(--grid-week);}
+  .todayline{position:absolute;top:0;bottom:0;width:2px;background:var(--today);z-index:4;pointer-events:none;}
+  .todayline::after{content:"今日";position:absolute;top:1px;left:3px;font-size:9px;font-weight:700;color:#fff;background:var(--today);padding:1px 4px;border-radius:3px;white-space:nowrap;}
+  .startline{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);z-index:4;pointer-events:none;}
+  .startline::after{content:"着工";position:absolute;top:14px;left:3px;font-size:9px;font-weight:700;color:#fff;background:var(--accent);padding:1px 4px;border-radius:3px;white-space:nowrap;}
+  .links{position:absolute;left:0;top:0;pointer-events:none;z-index:2;overflow:visible;}
+
+  .bar{position:absolute;height:23px;border-radius:6px;display:flex;align-items:center;color:#fff;font-size:10.5px;font-weight:600;cursor:grab;user-select:none;z-index:3;box-shadow:0 1px 2px rgba(0,0,0,.25);overflow:hidden;transition:box-shadow .12s;}
+  .bar:hover{box-shadow:0 2px 8px rgba(0,0,0,.28);} .bar.dragging{cursor:grabbing;z-index:20;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:none;}
+  .bar .lbl{padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;text-shadow:0 1px 1px rgba(0,0,0,.25);flex:1;z-index:1;}
+  .bar .handle{position:absolute;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:2;}
+  .bar .handle.l{left:0;} .bar .handle.r{right:0;}
+  .bar .handle::before{content:"";position:absolute;top:50%;transform:translateY(-50%);left:3px;width:2px;height:11px;border-radius:2px;background:rgba(255,255,255,.6);}
+  .bar .handle.r::before{left:auto;right:3px;}
+  .bar.done{opacity:.5;}
+  .hatch{position:absolute;top:0;bottom:0;pointer-events:none;background:repeating-linear-gradient(45deg,rgba(0,0,0,.30) 0 3px,rgba(255,255,255,.10) 3px 7px);}
+
+  .dropline{position:fixed;height:0;border-top:2px solid var(--accent);z-index:60;pointer-events:none;display:none;}
+  .duration-tip{position:fixed;z-index:70;pointer-events:none;background:var(--ink);color:var(--panel);font-size:11px;font-weight:600;padding:4px 8px;border-radius:5px;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3);opacity:0;transition:opacity .1s;}
+
+  .docfooter{margin-top:10px;display:flex;justify-content:flex-end;align-items:center;gap:12px;}
+  .dfoot-txt{font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:.06em;padding:2px 5px;border-radius:5px;}
+  .dfoot-txt:focus{outline:1.5px solid var(--accent);}
+  .dfoot-logo{height:56px;width:auto;flex:none;}
+  @media (prefers-color-scheme: dark){ .dfoot-logo{filter:brightness(0) invert(.92);} }
+  :root[data-theme="dark"] .dfoot-logo{filter:brightness(0) invert(.92);}
+  :root[data-theme="light"] .dfoot-logo{filter:none;}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(15,25,35,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{background:var(--panel);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);width:min(480px,100%);max-height:88vh;overflow:auto;padding:22px 24px 24px;}
+  .modal h2{font-size:16px;margin:0 0 4px;letter-spacing:.02em;}
+  .modal .msub{font-size:12px;color:var(--ink-soft);margin:0 0 18px;}
+  .mgrp{margin-bottom:18px;} .mgrp>.gl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;}
+  .dow{display:flex;gap:5px;flex-wrap:wrap;}
+  .dow button{width:38px;height:34px;border:1.5px solid var(--line-strong);background:var(--panel);color:var(--ink-soft);border-radius:8px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;}
+  .dow button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .chkrow{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px;cursor:pointer;}
+  .chkrow input{width:16px;height:16px;accent-color:var(--accent);}
+  .chkrow .sub{color:var(--ink-faint);font-size:11px;}
+  .mfld{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+  .mfld label{font-size:11px;font-weight:600;color:var(--ink-faint);letter-spacing:.03em;}
+  .mfld input{font:inherit;font-size:13px;padding:7px 9px;border:1.5px solid var(--line-strong);border-radius:8px;background:var(--panel);color:var(--ink);}
+  .mfld input:focus{outline:none;border-color:var(--accent);}
+  .addline{display:flex;gap:8px;margin-top:6px;}
+  .addline input[type=date]{flex:1;font:inherit;font-size:13px;padding:7px 9px;border:1.5px solid var(--line-strong);border-radius:8px;background:var(--panel);color:var(--ink);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{display:flex;align-items:center;gap:5px;font-size:11.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:16px;padding:3px 6px 3px 10px;font-variant-numeric:tabular-nums;}
+  .chip.on-ex{border-color:#c9762f;color:#c9762f;} .chip button{border:none;background:none;color:inherit;cursor:pointer;font-size:13px;line-height:1;opacity:.6;} .chip button:hover{opacity:1;}
+  .modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:6px;}
+
+  .hint{margin-top:12px;font-size:11.5px;color:var(--ink-faint);line-height:1.7;}
+  .hint b{color:var(--ink-soft);font-weight:600;}
+  .hidden{display:none!important;}
+  .cloudbar,#cloudBtnE,#printBtn,#pdfSiteBtn,#pdfCustBtn{display:none!important;}
+  .askp{margin:0 0 16px;font-size:14px;line-height:1.7;}
+
+  #printPages{display:none;}
+  @media print{
+    @page{size:A3 landscape;margin:8mm;}
+    body.printing #app{display:none!important;}
+    body.printing #printPages{display:block!important;}
+    .ppage{page-break-after:always;position:relative;}
+    .ppage:last-child{page-break-after:auto;}
+    .ppage .grid{border:1px solid #999;min-width:0!important;}
+    #printPages .timehead{position:relative!important;overflow:hidden!important;background:#fff;}
+    #printPages .lane{overflow:hidden!important;}
+    .todayline{display:none!important;} /* 「今日」は画面のみ・印刷しない */
+    body.custprint #printPages .rl2{display:none!important;} /* お客様用PDF：業者名を出さない */
+    .pnum{text-align:right;font-size:11px;color:#333;margin:0 0 4px;font-variant-numeric:tabular-nums;}
+    #app{background:#fff;padding:0;}
+    .toolbar,.hint,.grip,.lnk,.del,.addrow,.addcat,.catlabel .cdel,.whol,.zoom,.modal-bg{display:none!important;}
+    .docheader{border-bottom:2px solid #333;padding-bottom:8px;margin:0 0 10px;}
+    .dh-title,.dh-term,.dh-r,.dh-edit{color:#111!important;} .dh-title{font-size:30px;} .dh-term{font-size:22px;} .dh-r{font-size:19px;}
+    .dh-edit{border-bottom:none!important;min-width:0;}
+    .board{box-shadow:none;border:1px solid #999;border-radius:0;}
+    .scroller{overflow:visible!important;max-height:none!important;}
+    .corner,.timehead,.labels,.catlabel{position:static!important;}
+    .rl2 input{border:none!important;background:none!important;color:#333!important;padding:2px 0;}
+    .rl2 input::placeholder{color:transparent!important;}
+    .docfooter{margin-top:10px;border-top:1px solid #999;padding-top:8px;}
+    .dfoot-txt{color:#111!important;font-size:19px;}
+    .dfoot-logo{height:60px;filter:none!important;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+
+<div id="app">
+  <section class="setup" id="setup">
+    <h1>工程表ジェネレーター</h1>
+    <p class="lead">テンプレートは<b>ダブルクリック</b>で新規シートを作成。標準工事は複数チェックして「シートを作成」。現場名・着工日はシート内でいつでも変更できます。</p>
+    <div class="cloudbar"><span class="cstat" id="cloudStatus">接続確認中…</span><button class="btn ghost sm" id="cloudBtn">ログイン</button></div>
+    <div class="tpl-grid" id="tplGrid"></div>
+    <div class="std-h">標準工事（複数選択できます）</div>
+    <p class="std-sub">チェックした工事を組み合わせて、下の「シートを作成」で1枚のシートにします（例：ユニットバス＋キッチン）。</p>
+    <div class="std-grid" id="stdGrid"></div>
+    <div class="setup-form">
+      <button class="btn primary" id="createBtn">シートを作成（選択した標準工事）</button>
+    </div>
+    <div class="resume" id="resumeSection"></div>
+    <div class="lib" id="libSection"></div>
+  </section>
+
+  <section class="editor hidden" id="editor">
+    <div class="toolbar">
+      <span class="tpl-badge" id="tplBadge"></span>
+      <div class="grp"><label>着工日</label><input type="date" id="startDate2"></div>
+      <div class="grp"><label>表示開始</label><input type="date" id="leadDate" title="カレンダーから表示開始日を選択"><select id="leadSel">
+        <option value="0">着工日から</option>
+        <option value="7">1週間前から</option>
+        <option value="14">2週間前から</option>
+        <option value="21">3週間前から</option>
+        <option value="28">4週間前から</option>
+        <option value="custom" hidden>カスタム</option>
+      </select></div>
+      <button class="btn ghost sm" id="calBtn">⚙ 稼働日設定</button>
+      <button class="btn ghost sm" id="cloudBtnE" title="クラウド同期の状態">☁</button>
+      <div class="spacer"></div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="stCal">–</div><div class="l">工期(暦)</div></div>
+        <div class="stat"><div class="n" id="stWork">–</div><div class="l">実働</div></div>
+        <div class="stat"><div class="n" id="stProg">–</div><div class="l">進捗</div></div>
+      </div>
+      <div class="zoom"><button id="zOut" title="縮小">−</button><button id="zIn" title="拡大">＋</button></div>
+      <button class="btn ghost sm" id="saveBtn">💾 途中保存</button>
+      <button class="btn ghost sm" id="printBtn">🖨 印刷</button>
+      <button class="btn ghost sm" id="pdfSiteBtn">📄 現場用PDF</button>
+      <button class="btn ghost sm" id="pdfCustBtn">📄 お客様用PDF</button>
+      <button class="btn ghost sm" id="newBtn">🏠 トップへ</button>
+    </div>
+
+    <div class="docheader" id="docHeader">
+      <div class="dh-l">
+        <div class="dh-title" id="dhTitle" contenteditable="true" spellcheck="false"></div>
+        <div class="dh-term" id="dhTerm" contenteditable="true" spellcheck="false" title="クリックで直接編集（空にすると自動計算に戻ります）"></div>
+      </div>
+      <div class="dh-r" id="dhMeta"><span class="dh-item">担当者：<span class="dh-edit" id="dhMgr" contenteditable="true" spellcheck="false"></span></span><span class="dh-item">作成日：<span class="dh-edit" id="dhCreated" contenteditable="true" spellcheck="false"></span></span></div>
+    </div>
+
+    <div class="board">
+      <div class="scroller" id="scroller">
+        <div class="grid" id="grid">
+          <div class="corner">工事項目 / 業者</div>
+          <div class="timehead" id="timehead"></div>
+          <div class="labels" id="labels"></div>
+          <div class="lane" id="lane"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">
+      <b>操作:</b> バー中央ドラッグで移動／端ドラッグで日数(実働)伸縮。行の <b>⠿</b> で工程を、カテゴリー行の <b>⠿</b> でカテゴリーごと並べ替え。<b>🔗</b> で前の工程と連結（連結中は一緒に移動）。「表示開始」はプリセットまたはカレンダーで指定できます。<br>
+      <b>休工日:</b> 実働日数ベースで休工日は自動的に飛ばして（斜線表示）工程が乗りません。休工日・祝日は「⚙ 稼働日・書類設定」で管理します。業者欄は Enter で次の欄に移動します。<br>
+      <b>保存:</b> 「💾 途中保存」で、事務所の共有保存に物件として保存します（チーム全員とこぎつねが見られます）。タイトル・工期・担当者・作成日・社名は<b>紙面上をクリックして直接編集</b>できます。
+    </p>
+    <div class="docfooter" id="docFooterWrap">
+      <span class="dfoot-txt" id="docFooter" contenteditable="true" spellcheck="false" title="クリックで社名を直接編集"></span>
+      <img class="dfoot-logo" alt="アイビ建築" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iX+ODrOOCpOODpOODvF8yIiBkYXRhLW5hbWU9IuODrOOCpOODpOODvCAyIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTcuMDggNTAuODgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICMyMzE4MTU7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogI2YyYTA4YzsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPGcgaWQ9IlRwb3BiYXNlIj4KICAgIDxnPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yNC4yOCwzMy44MmgtNC4yM2MtMS43MS0uMjctMi43LTEuNzctMi44LTIuNTJ2LTYuOTJjMC00LjcyLTMuMjYtOC41NS03Ljk4LTguNTVTMS4xNiwxOS42NiwxLjE2LDI0LjM4djI1LjA2aDIzLjEyYzQuNzIsMCw4LjU1LTMuMTIsOC41NS03Ljg0cy0zLjg0LTcuNzgtOC41NS03Ljc4WiIvPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xNS4xNiw1LjY1YzAsMy4xMi0yLjUzLDUuNjUtNS42NSw1LjY1cy01LjY1LTIuNTMtNS42NS01LjY1UzYuMzksMCw5LjUxLDBzNS42NSwyLjUzLDUuNjUsNS42NVoiLz4KICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjUuMzMsMzIuNmgtNC42N2MtMS44Mi0uMjktMi4yNy0xLjg5LTIuMzgtMi42OXYtNi41OGMwLTUuMDQtNC4xLTkuMTQtOS4xNC05LjE0UzAsMTguMjksMCwyMy4zM3YyNy41NWgyNS4zM2M1LjA0LDAsOS4xNC00LjEsOS4xNC05LjE0cy00LjEtOS4xNC05LjE0LTkuMTRaTTI1LjMzLDQ3LjM5SDYuMjhjLTIuMTctLjEtMi42OC0xLjg3LTIuOC0yLjczdi0yMS4zNGMwLTMuMTIsMi41NC01LjY2LDUuNjYtNS42NnM1LjY2LDIuNTQsNS42Niw1LjY2djEyLjc1aDBzMTAuNTMsMCwxMC41MywwYzMuMTIsMCw1LjY2LDIuNTQsNS42Niw1LjY2cy0yLjU0LDUuNjYtNS42Niw1LjY2WiIvPgogICAgICA8cGF0aCBkPSJNNTQuOCw0NS4xOXMtLjAzLS4wNy0uMDQtLjA5Yy0uMDItLjAyLS4wNS0uMDQtLjA5LS4wNS0uMDQtLjAxLS4xLS4wMi0uMTctLjAyLS4wNywwLS4xNywwLS4yOSwwLS4xLDAtLjE5LDAtLjI1LDAtLjA2LDAtLjExLjAxLS4xNS4wMi0uMDQuMDEtLjA2LjAzLS4wOC4wNS0uMDIuMDItLjAzLjA1LS4wNC4wOGwtMS4yMiwzLjUxYy0uMDIuMDctLjA0LjEzLS4wNS4xNywwLC4wNCwwLC4wOC4wMi4xLjAyLjAyLjA2LjA0LjExLjA0LjA1LDAsLjEzLDAsLjIyLDAsLjA5LDAsLjE2LDAsLjIxLDAsLjA1LDAsLjEtLjAxLjEzLS4wMi4wMy0uMDEuMDUtLjAzLjA2LS4wNS4wMS0uMDIuMDItLjA0LjAzLS4wN2wuMjUtLjc3aDEuNDlsLjI3LjhzLjAyLjA1LjAzLjA2Yy4wMS4wMi4wMy4wMy4wNi4wNC4wMywwLC4wNy4wMi4xMy4wMi4wNiwwLC4xNCwwLC4yNCwwcy4xOCwwLC4yNCwwYy4wNiwwLC4xLS4wMi4xMi0uMDQuMDItLjAyLjAzLS4wNS4wMi0uMSwwLS4wNC0uMDItLjEtLjA1LS4xN2wtMS4yMi0zLjUxWk01My42NCw0Ny40N2wuNTYtMS42OGgwbC41NiwxLjY4aC0xLjEyWiIvPgogICAgICA8cGF0aCBkPSJNNjIuMzEsNDUuMDVzLS4wNy0uMDItLjEyLS4wMmMtLjA1LDAtLjEyLDAtLjIsMHMtLjE0LDAtLjE5LDBjLS4wNSwwLS4wOS4wMS0uMTIuMDItLjAzLjAxLS4wNS4wMi0uMDcuMDQtLjAxLjAyLS4wMi4wMy0uMDIuMDZ2My43NHMwLC4wNC4wMi4wNmMuMDEuMDIuMDMuMDMuMDcuMDQuMDMuMDEuMDcuMDIuMTIuMDIuMDUsMCwuMTIsMCwuMTksMHMuMTQsMCwuMiwwYy4wNSwwLC4wOS0uMDEuMTItLjAyLjAzLS4wMS4wNS0uMDIuMDctLjA0LjAxLS4wMi4wMi0uMDMuMDItLjA2di0zLjc0czAtLjA0LS4wMi0uMDZjLS4wMS0uMDItLjA0LS4wMy0uMDctLjA0WiIvPgogICAgICA8cGF0aCBkPSJNNzAuOTEsNDcuMTZjLS4wNy0uMDgtLjE1LS4xNS0uMjUtLjItLjA5LS4wNS0uMi0uMDktLjMxLS4xMS4wOS0uMDMuMTctLjA4LjIzLS4xMy4wNy0uMDUuMTMtLjExLjE3LS4xOC4wNS0uMDcuMDgtLjE1LjExLS4yMy4wMi0uMDguMDQtLjE3LjA0LS4yNywwLS4xNy0uMDMtLjMyLS4wOS0uNDUtLjA2LS4xMy0uMTUtLjIzLS4yNi0uMzEtLjEyLS4wOC0uMjYtLjE0LS40My0uMTktLjE3LS4wNC0uMzctLjA2LS42Mi0uMDZoLS45OWMtLjA3LDAtLjEyLjAyLS4xNy4wNi0uMDUuMDQtLjA3LjEtLjA3LjE5djMuNDVjMCwuMDkuMDIuMTUuMDcuMTkuMDUuMDQuMS4wNi4xNy4wNmgxLjA1Yy4xNiwwLC4zLDAsLjQzLS4wMy4xMy0uMDIuMjUtLjA1LjM3LS4wOS4xMS0uMDQuMjItLjA5LjMxLS4xNi4wOS0uMDYuMTgtLjE0LjI0LS4yMy4wNy0uMDkuMTItLjE5LjE2LS4zLjA0LS4xMS4wNi0uMjQuMDYtLjM4cy0uMDItLjI2LS4wNi0uMzYtLjEtLjItLjE3LS4yOFpNNjkuMDYsNDUuNjRoLjQxYy4xMiwwLC4yMi4wMS4zLjAzLjA3LjAyLjE0LjA1LjE5LjEuMDUuMDQuMDkuMDkuMTEuMTYuMDIuMDYuMDQuMTMuMDQuMjEsMCwuMDctLjAxLjE0LS4wMy4yLS4wMi4wNi0uMDYuMTItLjEuMTdzLS4xLjA5LS4xNy4xMWMtLjA3LjAzLS4xNi4wNC0uMjguMDRoLS40NXYtMS4wM1pNNzAuMjUsNDguMDdjLS4wMy4wNy0uMDguMTMtLjEzLjE3LS4wNi4wNS0uMTIuMDgtLjIuMS0uMDguMDItLjE3LjA0LS4yOC4wNGgtLjU4di0xLjEzaC40OGMuMTUsMCwuMjcuMDEuMzYuMDQuMDkuMDMuMTcuMDYuMjMuMTEuMDYuMDUuMS4xMS4xMy4xOC4wMy4wNy4wNS4xNS4wNS4yNXMtLjAyLjE3LS4wNS4yM1oiLz4KICAgICAgPHBhdGggZD0iTTc3LjUyLDQ1LjA1cy0uMDctLjAyLS4xMi0uMDJjLS4wNSwwLS4xMiwwLS4yLDBzLS4xNCwwLS4xOSwwYy0uMDUsMC0uMDkuMDEtLjEyLjAyLS4wMy4wMS0uMDUuMDItLjA3LjA0LS4wMS4wMi0uMDIuMDMtLjAyLjA2djMuNzRzMCwuMDQuMDIuMDZjLjAxLjAyLjAzLjAzLjA3LjA0LjAzLjAxLjA3LjAyLjEyLjAyLjA1LDAsLjEyLDAsLjE5LDBzLjE0LDAsLjIsMGMuMDUsMCwuMDktLjAxLjEyLS4wMi4wMy0uMDEuMDUtLjAyLjA3LS4wNC4wMS0uMDIuMDItLjAzLjAyLS4wNnYtMy43NHMwLS4wNC0uMDItLjA2Yy0uMDEtLjAyLS4wNC0uMDMtLjA3LS4wNFoiLz4KICAgICAgPHBhdGggZD0iTTg2LjI3LDQ4LjY0bC0xLjE4LTEuNzksMS4wOS0xLjQyYy4wNS0uMDguMDktLjE0LjEtLjE3LjAyLS4wNC4wMy0uMDcuMDMtLjExLDAtLjAyLDAtLjA0LS4wMi0uMDUtLjAxLS4wMi0uMDMtLjAzLS4wNy0uMDQtLjAzLS4wMS0uMDctLjAyLS4xMy0uMDMtLjA1LDAtLjEyLDAtLjIsMHMtLjE0LDAtLjIsMGMtLjA1LDAtLjA5LjAxLS4xMy4wMi0uMDMuMDEtLjA2LjAyLS4wOC4wNC0uMDIuMDItLjA0LjA0LS4wNS4wN2wtMS4xNiwxLjY4di0xLjY5czAtLjA0LS4wMi0uMDZjLS4wMS0uMDItLjAzLS4wMy0uMDYtLjA0LS4wMy0uMDEtLjA3LS4wMi0uMTItLjAyLS4wNSwwLS4xMiwwLS4yLDBzLS4xNCwwLS4xOSwwYy0uMDUsMC0uMDkuMDEtLjEyLjAyLS4wMy4wMS0uMDUuMDItLjA3LjA0LS4wMS4wMi0uMDIuMDQtLjAyLjA2djMuNzNzMCwuMDQuMDIuMDZjLjAxLjAyLjA0LjAzLjA3LjA0LjAzLjAxLjA3LjAyLjEyLjAzLjA1LDAsLjEyLDAsLjE5LDBzLjE0LDAsLjIsMGMuMDUsMCwuMDktLjAxLjEyLS4wMy4wMy0uMDEuMDUtLjAyLjA2LS4wNC4wMS0uMDIuMDItLjA0LjAyLS4wNnYtMS44OGwxLjIsMS44OHMuMDMuMDUuMDYuMDdjLjAzLjAyLjA3LjA0LjEzLjA1LjA2LDAsLjE1LjAxLjI5LjAxLjA4LDAsLjE1LDAsLjIxLDAsLjA2LDAsLjEtLjAxLjEzLS4wMy4wMy0uMDEuMDUtLjAzLjA2LS4wNC4wMS0uMDIuMDItLjA0LjAyLS4wNiwwLS4wMiwwLS4wNC0uMDEtLjA3LDAtLjAzLS4wNC0uMDgtLjA4LS4xN1oiLz4KICAgICAgPHBhdGggZD0iTTk0LjIzLDQ4LjQ0cy0uMDItLjA0LS4wNC0uMDVjLS4wMi0uMDEtLjAzLS4wMi0uMDUtLjAyaC0xLjQzdi0xLjEyaDEuMnMuMDQsMCwuMDUtLjAyYy4wMiwwLC4wMy0uMDMuMDQtLjA1LjAxLS4wMi4wMi0uMDUuMDItLjA5czAtLjA5LDAtLjE1LDAtLjExLDAtLjE1YzAtLjA0LS4wMS0uMDctLjAyLS4xLS4wMS0uMDItLjAyLS4wNC0uMDQtLjA1LS4wMi0uMDEtLjAzLS4wMi0uMDUtLjAyaC0xLjJ2LS45N2gxLjQxcy4wMywwLC4wNS0uMDJjLjAxLS4wMS4wMy0uMDMuMDQtLjA1LjAxLS4wMi4wMi0uMDYuMDItLjFzMC0uMDksMC0uMTVjMC0uMDYsMC0uMTEsMC0uMTUsMC0uMDQtLjAxLS4wNy0uMDItLjEtLjAxLS4wMy0uMDItLjA0LS4wNC0uMDUtLjAxLS4wMS0uMDMtLjAyLS4wNS0uMDJoLTEuOThjLS4wNywwLS4xMi4wMi0uMTcuMDYtLjA1LjA0LS4wNy4xLS4wNy4xOXYzLjQ1YzAsLjA5LjAyLjE1LjA3LjE5LjA1LjA0LjEuMDYuMTcuMDZoMS45OXMuMDQsMCwuMDUtLjAyYy4wMi0uMDEuMDMtLjAzLjA0LS4wNS4wMS0uMDIuMDItLjA2LjAyLS4xLDAtLjA0LDAtLjA5LDAtLjE1czAtLjExLDAtLjE1YzAtLjA0LS4wMS0uMDctLjAyLS4xWiIvPgogICAgICA8cGF0aCBkPSJNMTAzLjE4LDQ1LjA2cy0uMDYtLjAyLS4xMS0uMDNjLS4wNSwwLS4xLDAtLjE3LDAtLjA3LDAtLjEzLDAtLjE4LDAtLjA1LDAtLjA4LjAxLS4xMS4wMy0uMDMuMDEtLjA1LjAzLS4wNi4wNC0uMDEuMDItLjAyLjAzLS4wMi4wNnYxLjg2YzAsLjE0LDAsLjI5LDAsLjQ0LDAsLjE1LDAsLjMuMDEuNDVoMGMtLjA0LS4wOC0uMDctLjE2LS4xMS0uMjRzLS4wOC0uMTYtLjEyLS4yNWMtLjA0LS4wOC0uMDgtLjE3LS4xMy0uMjVzLS4wOS0uMTctLjEzLS4yNmwtLjc3LTEuNDVjLS4wNC0uMDgtLjA4LS4xNS0uMTEtLjItLjA0LS4wNS0uMDgtLjEtLjEyLS4xMy0uMDQtLjAzLS4wOS0uMDUtLjE0LS4wNy0uMDUtLjAxLS4xMi0uMDItLjItLjAyaC0uNDNjLS4wOCwwLS4xNS4wMi0uMjEuMDctLjA2LjA1LS4wOC4xMi0uMDguMjJ2My41NnMwLC4wNC4wMi4wNmMuMDEuMDIuMDMuMDMuMDYuMDQuMDMuMDEuMDYuMDIuMTEuMDMuMDUsMCwuMTEsMCwuMTgsMHMuMTMsMCwuMTgsMGMuMDUsMCwuMDgtLjAxLjExLS4wMy4wMy0uMDEuMDUtLjAyLjA2LS4wNC4wMS0uMDIuMDItLjAzLjAyLS4wNnYtMi4wN2MwLS4xNiwwLS4zMSwwLS40NSwwLS4xNS0uMDEtLjI5LS4wMi0uNDRoMGMuMDUuMTIuMS4yNC4xNi4zNy4wNi4xMy4xMi4yNS4xNy4zNmwuOTksMS44NWMuMDUuMS4xLjE5LjE0LjI1LjA0LjA2LjA4LjEyLjEzLjE1LjA0LjA0LjA5LjA2LjE0LjA4LjA1LjAxLjExLjAyLjE5LjAyaC4zNHMuMDgsMCwuMTEtLjAyYy4wNC0uMDEuMDctLjAzLjEtLjA1LjAzLS4wMi4wNS0uMDYuMDctLjA5LjAyLS4wNC4wMi0uMDguMDItLjEzdi0zLjU2czAtLjA0LS4wMi0uMDZjLS4wMS0uMDItLjAzLS4wMy0uMDUtLjA0WiIvPgogICAgICA8cGF0aCBkPSJNMTExLjg0LDQ4LjEycy0uMDItLjA0LS4wMy0uMDVjLS4wMSwwLS4wMy0uMDEtLjA1LS4wMS0uMDMsMC0uMDYuMDItLjExLjA1LS4wNS4wMy0uMTEuMDctLjE4LjExLS4wNy4wNC0uMTYuMDgtLjI3LjExLS4xLjAzLS4yMy4wNS0uMzcuMDUtLjE2LDAtLjMtLjAzLS40Mi0uMDgtLjEzLS4wNS0uMjMtLjE0LS4zMi0uMjUtLjA5LS4xMS0uMTYtLjI1LS4yLS40Mi0uMDUtLjE3LS4wNy0uMzctLjA3LS42LDAtLjIxLjAyLS40LjA3LS41Ny4wNC0uMTcuMTEtLjMxLjItLjQzLjA5LS4xMi4xOS0uMjEuMzItLjI4LjEyLS4wNi4yNi0uMS40Mi0uMS4xNCwwLC4yNy4wMi4zNy4wNS4xLjA0LjE5LjA4LjI3LjEyLjA3LjA0LjE0LjA4LjE4LjEyLjA1LjA0LjA5LjA1LjEyLjA1LjAyLDAsLjAzLDAsLjA1LS4wMi4wMS0uMDEuMDMtLjAzLjA0LS4wNi4wMS0uMDMuMDItLjA2LjAyLS4xLDAtLjA0LDAtLjA5LDAtLjE2LDAtLjA2LDAtLjEsMC0uMTQsMC0uMDQsMC0uMDctLjAxLS4xLDAtLjAzLS4wMS0uMDUtLjAyLS4wNy0uMDEtLjAyLS4wMy0uMDQtLjA2LS4wNy0uMDMtLjAzLS4wOC0uMDYtLjE1LS4xLS4wNy0uMDQtLjE1LS4wNy0uMjMtLjEtLjA5LS4wMy0uMTgtLjA1LS4yOC0uMDctLjEtLjAyLS4yMS0uMDMtLjMyLS4wMy0uMjcsMC0uNTIuMDUtLjc1LjE0LS4yMy4wOS0uNDIuMjMtLjU4LjQtLjE2LjE4LS4yOS40LS4zOC42Ni0uMDkuMjYtLjEzLjU2LS4xMy45cy4wNC42Mi4xMi44N2MuMDguMjUuMi40Ni4zNS42Mi4xNS4xNy4zNC4yOS41Ni4zNy4yMi4wOC40Ni4xMy43My4xMy4xNCwwLC4yNy0uMDEuMzktLjAzLjEyLS4wMi4yMy0uMDUuMzItLjA4LjA5LS4wMy4xNy0uMDcuMjQtLjExLjA2LS4wNC4xMS0uMDcuMTMtLjA5LjAyLS4wMi4wNC0uMDQuMDUtLjA2LjAxLS4wMi4wMi0uMDQuMDItLjA3LDAtLjAzLjAxLS4wNi4wMS0uMDksMC0uMDQsMC0uMDgsMC0uMTMsMC0uMDcsMC0uMTMsMC0uMTgsMC0uMDQtLjAxLS4wOC0uMDItLjFaIi8+CiAgICAgIDxwYXRoIGQ9Ik0xMjAuNDYsNDUuMDVzLS4wNy0uMDItLjEyLS4wMmMtLjA1LDAtLjEyLDAtLjE5LDBzLS4xNSwwLS4yLDBjLS4wNSwwLS4wOS4wMS0uMTIuMDItLjAzLjAxLS4wNS4wMi0uMDYuMDQtLjAxLjAyLS4wMi4wMy0uMDIuMDZ2MS40NWgtMS40OHYtMS40NXMwLS4wNC0uMDItLjA2Yy0uMDEtLjAyLS4wMy0uMDMtLjA2LS4wNC0uMDMtLjAxLS4wNy0uMDItLjEyLS4wMi0uMDUsMC0uMTIsMC0uMiwwcy0uMTQsMC0uMTksMC0uMDkuMDEtLjEyLjAyYy0uMDMuMDEtLjA1LjAyLS4wNy4wNC0uMDEuMDItLjAyLjAzLS4wMi4wNnYzLjc0czAsLjA0LjAyLjA2Yy4wMS4wMi4wNC4wMy4wNy4wNHMuMDcuMDIuMTIuMDJjLjA1LDAsLjEyLDAsLjE5LDBzLjE0LDAsLjIsMGMuMDUsMCwuMDktLjAxLjEyLS4wMi4wMy0uMDEuMDUtLjAyLjA2LS4wNC4wMS0uMDIuMDItLjAzLjAyLS4wNnYtMS42aDEuNDh2MS42czAsLjA0LjAyLjA2Yy4wMS4wMi4wMy4wMy4wNi4wNC4wMy4wMS4wNy4wMi4xMi4wMi4wNSwwLC4xMiwwLC4yLDBzLjE0LDAsLjE5LDBjLjA1LDAsLjA5LS4wMS4xMi0uMDJzLjA1LS4wMi4wNy0uMDRjLjAxLS4wMi4wMi0uMDMuMDItLjA2di0zLjc0czAtLjA0LS4wMi0uMDZjLS4wMS0uMDItLjA0LS4wMy0uMDctLjA0WiIvPgogICAgICA8cGF0aCBkPSJNMTI3LjE0LDQ1LjA1cy0uMDctLjAyLS4xMi0uMDJjLS4wNSwwLS4xMiwwLS4yLDBzLS4xNCwwLS4xOSwwYy0uMDUsMC0uMDkuMDEtLjEyLjAyLS4wMy4wMS0uMDUuMDItLjA3LjA0LS4wMS4wMi0uMDIuMDMtLjAyLjA2djMuNzRzMCwuMDQuMDIuMDZjLjAxLjAyLjA0LjAzLjA3LjA0LjAzLjAxLjA3LjAyLjEyLjAyLjA1LDAsLjEyLDAsLjE5LDBzLjE0LDAsLjIsMGMuMDUsMCwuMDktLjAxLjEyLS4wMnMuMDUtLjAyLjA3LS4wNGMuMDEtLjAyLjAyLS4wMy4wMi0uMDZ2LTMuNzRzMC0uMDQtLjAyLS4wNmMtLjAxLS4wMi0uMDQtLjAzLS4wNy0uMDRaIi8+CiAgICAgIDxwYXRoIGQ9Ik0xMzUuOSw0OC42NGwtMS4xOC0xLjc5LDEuMDktMS40MmMuMDUtLjA4LjA5LS4xNC4xLS4xNy4wMi0uMDQuMDMtLjA3LjAzLS4xMSwwLS4wMiwwLS4wNC0uMDItLjA1LS4wMS0uMDItLjAzLS4wMy0uMDctLjA0cy0uMDctLjAyLS4xMy0uMDMtLjEyLDAtLjIsMC0uMTQsMC0uMiwwYy0uMDUsMC0uMDkuMDEtLjEzLjAyLS4wMy4wMS0uMDYuMDItLjA4LjA0LS4wMi4wMi0uMDQuMDQtLjA1LjA3bC0xLjE2LDEuNjh2LTEuNjlzMC0uMDQtLjAyLS4wNmMtLjAxLS4wMi0uMDMtLjAzLS4wNi0uMDQtLjAzLS4wMS0uMDctLjAyLS4xMi0uMDItLjA1LDAtLjEyLDAtLjIsMHMtLjE0LDAtLjE5LDBjLS4wNSwwLS4wOS4wMS0uMTIuMDItLjAzLjAxLS4wNS4wMi0uMDcuMDQtLjAxLjAyLS4wMi4wNC0uMDIuMDZ2My43M3MwLC4wNC4wMi4wNmMuMDEuMDIuMDQuMDMuMDcuMDQuMDMuMDEuMDcuMDIuMTIuMDMuMDUsMCwuMTIsMCwuMTksMHMuMTQsMCwuMiwwYy4wNSwwLC4wOS0uMDEuMTItLjAzLjAzLS4wMS4wNS0uMDIuMDYtLjA0LjAxLS4wMi4wMi0uMDQuMDItLjA2di0xLjg4bDEuMiwxLjg4cy4wMy4wNS4wNi4wN2MuMDMuMDIuMDcuMDQuMTMuMDUuMDYsMCwuMTUuMDEuMjkuMDEuMDgsMCwuMTUsMCwuMjEsMCwuMDYsMCwuMS0uMDEuMTMtLjAzLjAzLS4wMS4wNS0uMDMuMDYtLjA0LjAxLS4wMi4wMi0uMDQuMDItLjA2LDAtLjAyLDAtLjA0LS4wMS0uMDcsMC0uMDMtLjA0LS4wOC0uMDgtLjE3WiIvPgogICAgICA8cGF0aCBkPSJNMTQ0Ljc2LDQ1LjA5cy0uMDMtLjAzLS4wNi0uMDRjLS4wMy0uMDEtLjA3LS4wMi0uMTItLjAyLS4wNSwwLS4xMSwwLS4xOSwwcy0uMTQsMC0uMTksMGMtLjA1LDAtLjA5LjAxLS4xMi4wMi0uMDMuMDEtLjA1LjAyLS4wNi4wNC0uMDEuMDItLjAyLjAzLS4wMi4wNnYyLjM4YzAsLjE0LS4wMi4yNi0uMDYuMzctLjA0LjExLS4wOS4yLS4xNi4yOC0uMDcuMDctLjE1LjEzLS4yNS4xNy0uMS4wNC0uMjEuMDYtLjM0LjA2cy0uMjQtLjAyLS4zNC0uMDZjLS4xLS4wNC0uMTktLjA5LS4yNi0uMTctLjA3LS4wOC0uMTMtLjE3LS4xNy0uMjktLjA0LS4xMS0uMDYtLjI1LS4wNi0uNDF2LTIuMzRzMC0uMDQtLjAyLS4wNmMtLjAxLS4wMi0uMDQtLjAzLS4wNy0uMDQtLjAzLS4wMS0uMDctLjAyLS4xMi0uMDItLjA1LDAtLjEyLDAtLjE5LDBzLS4xNCwwLS4yLDBjLS4wNSwwLS4wOS4wMS0uMTIuMDItLjAzLjAxLS4wNS4wMi0uMDcuMDQtLjAxLjAyLS4wMi4wMy0uMDIuMDZ2Mi40MWMwLC4yNS4wNC40Ny4xMS42Ni4wNy4xOS4xOC4zNS4zMS40Ny4xNC4xMy4zLjIyLjUuMjguMi4wNi40Mi4wOS42Ny4wOS4yNiwwLC41LS4wMy43LS4xLjItLjA3LjM4LS4xNy41MS0uMy4xNC0uMTMuMjQtLjMuMzItLjQ5LjA3LS4xOS4xMS0uNDEuMTEtLjY1di0yLjM3czAtLjA0LS4wMi0uMDZaIi8+CiAgICAgIDxwYXRoIGQ9Ik02MC4yMiwxMi44NGgtMTguMmMtLjIzLDAtLjQxLjE4LS40MS40MXYyLjM5YzAsLjIzLjE4LjQxLjQxLjQxaDE0LjA4LS4wMXMxLjQ1LjEsMS42MiwxLjI4Yy0uMDgsMS44My0uMjgsMy42Ny0uNzEsNC42NC0uNjQsMS40NC0yLjI1LDIuNDMtMy43MiwzLjA0LS45OS4yNi0xLjI4LS4zOS0xLjM0LS41N3YtMy44MWMwLS4yMi0uMTgtLjQxLS40MS0uNDFoLTIuMTFjLS4yMywwLS40Mi4xOC0uNDIuNDF2OC44NGMwLC4wOSwwLC4xNy0uMDIuMjUtLjIyLDEuMjItMS43LDMuODYtNSw1LjU5LS4yLjEtLjIzLjM4LS4xLjU2bDEuMjEsMS42OGMuMTMuMTkuMzguMTkuNTkuMSwzLjcyLTEuNzMsNS40LTQuNTUsNS45OC02LjM2di4wM3MuNjQtMi43MSwyLjI5LTMuNDZoMGMyLjA0LS43NCw0LjctMi4xNiw1Ljc2LTQuNzYsMS4xNS0yLjgxLjkzLTkuNC45My0xMC4yN2gtLjQzWiIvPgogICAgICA8cGF0aCBkPSJNODIuNDYsMTMuMTFsLTE4LjE5LDcuMjJjLS4xNi4wNi0uMjYuMjEtLjI2LjM4djIuNzNjMCwuMjkuMy40OC41OC4zOGw1LjM1LTIuMTJjMS40OC0uNSwxLjc1LjczLDEuOCwxLjA4djE0LjQ4YzAsLjIyLjE5LjQxLjQyLjQxaDIuNmMuMjMsMCwuNDItLjE4LjQyLS40MXYtMTUuMDloMHMtLjA1LTIuNDgsMS43Mi0zLjIzbDUuODgtMi4zM2MuMTYtLjA2LjI2LS4yMS4yNi0uMzh2LTIuNzNjMC0uMjktLjMtLjQ4LS41OC0uMzhaIi8+CiAgICAgIDxwYXRoIGQ9Ik0xMDUuMzIsMzQuMjRoLTEyLjI5Yy0xLjU0LDAtMi43OS0xLjIxLTIuNzktMi43di0zLjEyYy4wNS0uMzEuNDItMS45OSwyLjUtMi43NXYtLjAyczkuODktNCw5Ljg5LTRjLjE2LS4wNi4yNi0uMjEuMjYtLjM4di0yLjczYzAtLjI5LS4zLS40OC0uNTgtLjM4bC05LjM5LDMuOGMtMS43LjU3LTIuNDctLjUxLTIuNjYtLjg2LDAtLjAxLS4wMS0uMDItLjAyLS4wM3YtNy44M2MwLS4yMi0uMTktLjQxLS40Mi0uNDFoLTIuNmMtLjIzLDAtLjQyLjE4LS40Mi40MXYxNS45MWMwLDguMDMsMS42Myw4LjQzLDguNjksOC40M2g5LjgzYy4yMywwLC40Mi0uMTguNDItLjQxdi0yLjUzYzAtLjIyLS4xOS0uNDEtLjQyLS40MVoiLz4KICAgICAgPHBhdGggZD0iTTEwMC40MywxNy40MmgxLjgxYy4yMywwLC40Mi0uMTguNDItLjQxdi0zLjc1YzAtLjIyLS4xOS0uNDEtLjQyLS40MWgtMS44MWMtLjIzLDAtLjQyLjE4LS40Mi40MXYzLjc1YzAsLjIyLjE5LjQxLjQyLjQxWiIvPgogICAgICA8cGF0aCBkPSJNMTA1Ljg2LDEyLjg2aC0xLjgxYy0uMjMsMC0uNDIuMTgtLjQyLjQxdjMuNzVjMCwuMjIuMTkuNDEuNDIuNDFoMS44MWMuMjMsMCwuNDItLjE4LjQyLS40MXYtMy43NWMwLS4yMi0uMTktLjQxLS40Mi0uNDFaIi8+CiAgICAgIDxwYXRoIGQ9Ik0xMzEuNDQsMTYuMjloLTEuMDV2LTMuNDRjMC0uMjUtLjIxLS40NS0uNDYtLjQ1aC00LjM2di0xLjY2YzAtLjI1LS4yMS0uNDUtLjQ2LS40NWgtMS43OWMtLjI1LDAtLjQ2LjItLjQ2LjQ1djEuNjZoLTMuNGMtLjI1LDAtLjQ2LjItLjQ2LjQ1djEuNzRjMCwuMjUuMjEuNDUuNDYuNDVoMi45Yy4yLjA1LjQ2LjE5LjUxLjUxdi4xOWMtLjA4LjU0LS43NC41NC0uNzQuNTRoMHMtNC4zOSwwLTQuMzksMGMtLjI1LDAtLjQ2LjItLjQ2LjQ1djEuNzRjMCwuMjUuMjEuNDUuNDYuNDVoNC40OGMuMTguMDIuNi4xMi42Ni41NHYuMjVjLS4wNS4zOC0uMzkuNDktLjU5LjUzaC0yLjY4Yy0uMjUsMC0uNDYuMi0uNDYuNDV2MS43NGMwLC4yNS4yMS40NS40Ni40NWgyLjY3Yy4yLjAzLjU1LjE1LjYxLjUzdi4xOWMtLjA2LjM5LS40Mi41MS0uNjIuNTNoLTMuMjJjLS4yNSwwLS40Ni4yLS40Ni40NXYxLjc0YzAsLjI1LjIxLjQ1LjQ2LjQ1aDMuMjdjLjIxLjA0LjUyLjE2LjU4LjUzdi4zNWMtLjA1LjMyLS4zLjQ2LS41LjUxaC00LjMyYy0uMjUsMC0uNDYuMi0uNDYuNDV2MS43NGMwLC4yNS4yMS40NS40Ni40NWg0LjI5Yy4yMS4wNS40OC4xOC41My41MnYyLjA3YzAsLjI1LjIxLjQ1LjQ2LjQ1aDEuNzljLjI1LDAsLjQ2LS4yLjQ2LS40NXYtMi4xYy4wNC0uMTQuMTctLjQuNTItLjQ4aDQuNzdjLjI1LDAsLjQ2LS4yLjQ2LS40NXYtMS43NGMwLS4yNS0uMjEtLjQ1LS40Ni0uNDVoLTQuNzljLS4zNC0uMDktLjQ2LS4zNC0uNTEtLjQ4di0uNDJjLjA1LS4xNS4xOS0uNDIuNTktLjQ5aDMuN2MuMjUsMCwuNDYtLjIuNDYtLjQ1di0xLjc0YzAtLjI1LS4yMS0uNDUtLjQ2LS40NWgtMy42MmMtLjQ2LS4wNC0uNjItLjM0LS42Ny0uNXYtLjI2Yy4wNS0uMTYuMjEtLjQ1LjY0LS41aDMuNzJjLjI1LDAsLjQ2LS4yLjQ2LS40NXYtMy41MWgxLjA1Yy4yNSwwLC40Ni0uMi40Ni0uNDV2LTEuNzRjMC0uMjUtLjIxLS40NS0uNDYtLjQ1Wk0xMjcuNjcsMTUuNDl2LjhoLTEuMzNzMCwwLDAsMGMtLjU0LDAtLjcyLS4zNC0uNzctLjUxdi0uMjZjLjA0LS4xNC4xNy0uMzkuNTEtLjQ4aDEuMTNjLjI1LDAsLjQ2LjIuNDYuNDVaTTEyNy42NywxOS44YzAsLjI1LS4yMS40NS0uNDYuNDVoLTEuMDJjLS40Mi0uMDYtLjU3LS4zNC0uNjItLjQ5di0uMzJjLjA1LS4xNy4yMi0uNDguNzEtLjVoMS40di44N1oiLz4KICAgICAgPHBhdGggZD0iTTExOC42MiwzMy45N2wtMi4wNy0yLjM2Yy0uMjYtLjM4LS4xOC0xLjA0LS4xNC0xLjMsMS41NC00LjQ1LDEuOTQtOC4zNiwxLjk2LTguNjdsLjA2LS45MmMuMDItLjI2LS4xOS0uNDgtLjQ2LS40OGgtMi41OGMtLjIxLS4wMy0uNTQtLjE2LS40OS0uNTZsMi40NS03LjAzYy4xLS4yOS0uMTItLjU5LS40NC0uNTloLTUuNTdjLS4yNiwwLS40Ni4yLS40Ni40NXYxLjc0YzAsLjI1LjIxLjQ1LjQ2LjQ1aDEuNzhjLjMyLDAsLjU0LjMuNDQuNTlsLTIuNiw3LjQ4Yy0uMDIuMDgtLjA0LjI5LjExLjM4bDEuOTIuNjNjLjI0LjA4LjUtLjA1LjU5LS4yOGwuMDgtLjI0Yy4wOC0uMTQuMy0uMzguODItLjM4aC40Niwwcy41NC4xMi41MS42N2MtLjE2LDEuNDktLjQ0LDIuOTMtLjk2LDQuNTNoMGMtLjIyLjY4LS42Ni40LS43OC4zbC0yLjYtMi45NmMtLjA3LS4wOC0uMjItLjAzLS4yMi4wOHYzLjU3YzAsLjExLjA0LjIxLjExLjI5bDEuNjQsMS44Nmgwcy4zNy40LjE5LjgzYy0uNTIsMS4wNS0xLjE0LDIuMTgtMS44OSwzLjQ1LS4xLjE2LS4wOC4zNy4wNC41MWwxLjEyLDEuNDljLjE5LjIzLjU2LjIyLjc0LS4wMi43MS0uOTgsMS4zMi0yLjAzLDEuODctMy4xLjExLS4xLjQtLjMxLjcxLDBoMHMxLjk2LDIuMjMsMS45NiwyLjIzYy41OC42NiwxLjQ0LDEuMDUsMi4zNCwxLjA1aDEyLjE5di0yLjY0aC0xMC45NGMtLjksMC0xLjc1LS4zOC0yLjM0LTEuMDVaIi8+CiAgICAgIDxwYXRoIGQ9Ik0xNTYuNjEsMjguMzFoLTguMjZjLS4xNi0uMDQtLjQxLS4xMy0uNDctLjM2di0xLjE1YzAtLjI1LS4yMS0uNDUtLjQ2LS40NWgtMS43MWMtLjI1LDAtLjQ2LjItLjQ2LjQ1djEuMTJjLS4wNC4yNi0uMy4zNi0uNDcuNGgtOC4yNWMtLjI1LDAtLjQ2LjItLjQ2LjQ1djEuNjZjMCwuMjUuMjEuNDUuNDYuNDVoNC45N2MuMTguMDIuNTkuMS4yOC40NWwtNS4zNiw0LjA3Yy0uMi4xNS0uMjQuNDQtLjA4LjYzbDEuMDUsMS4zMWMuMTYuMTkuNDUuMjMuNjUuMDhsNi42Ny01LjA3Yy4xNi0uMDguNS0uMTkuNTUuMTR2NC43M2MwLC4yNS4yMS40NS40Ni40NWgxLjcxYy4yNSwwLC40Ni0uMi40Ni0uNDV2LTQuNzdjLjA3LS4zLjQyLS4xNy41Ni0uMDlsNi42Niw1LjA2Yy4yLjE1LjQ5LjEyLjY1LS4wOGwxLjA1LTEuMzFjLjE2LS4xOS4xMi0uNDgtLjA4LS42M2wtNS4zNy00LjA4Yy0uMjktLjMzLjExLS40Mi4yOS0uNDRoNC45OGMuMjUsMCwuNDYtLjIuNDYtLjQ1di0xLjY2YzAtLjI1LS4yMS0uNDUtLjQ2LS40NVoiLz4KICAgICAgPHBhdGggZD0iTTE0OS4wNSwyMS40OWwtLjUzLjYyYy0uMTYuMTktLjEzLjQ3LjA2LjYzbDEuOCwxLjQ1Yy4yLjE2LjQ5LjEzLjY1LS4wNmwuNTMtLjYyYy4xNi0uMTkuMTMtLjQ3LS4wNi0uNjNsLTEuOC0xLjQ1Yy0uMi0uMTYtLjQ5LS4xMy0uNjUuMDZaIi8+CiAgICAgIDxwYXRoIGQ9Ik0xNTMuNzMsMTguMDZoLTcuMzdjLS4yNSwwLS40Ni4yLS40Ni40NXYuMjRzMCwwLDAsMHY2LjM5YzAsLjI1LjIxLjQ1LjQ2LjQ1aDEuMjVjLjI1LDAsLjQ2LS4yLjQ2LS40NXYtNC42NWMuMTItLjI3LjUyLS4zMi41OC0uMzNoMi43N2MuMDcsMCwuNTUuMDcuNjEuNDN2My4zN3MwLDAsMCwuMDF2MS4yMWMwLC4yNS4yMS40NS40Ni40NWg0LjExYy4yNSwwLC40Ni0uMi40Ni0uNDV2LTEuMjFjMC0uMjUtLjIxLS40NS0uNDYtLjQ1aC0yLjM5di00Ljc3czAsMCwwLS4wMXYtLjIzYzAtLjI1LS4yMS0uNDUtLjQ2LS40NVoiLz4KICAgICAgPHBhdGggZD0iTTEzNi4xOCwxOC44M2MxLjMxLTEuMDMsMi4zNS0yLjM1LDMuMTUtMy42Ny4xLS4xMS4yOC0uMjguNDgtLjI5aC4xOHMuMjcuMDYuMzcuMjFsLjcsMmMuMDguMjMuMzUuMzYuNTkuMjhsMS4xOC0uMzljLjI0LS4wOC4zNy0uMzQuMjktLjU3bC0uNDItMS4xOWgwcy0uMTEtLjMzLjI2LS4zNGgyLjIyYy4yNSwwLC40Ni0uMi40Ni0uNDV2LTEuMjFjMC0uMjUtLjIxLS40NS0uNDYtLjQ1aC0zLjg4czAsMCwwLDBjLS41NiwwLS41Ni0uMzMtLjUzLS40Ny4yMy0uNTcuNDItMS4wOC41Ni0xLjQ5LjEtLjI5LS4xMy0uNTgtLjQ0LS41OGgtMS4zMmMtLjIsMC0uMzcuMTItLjQ0LjMxLS40OSwxLjM5LTEuNDUsMy42MS0yLjk4LDUuMzktLjA3LjA4LS4xMS4xOC0uMTEuMjh2Mi41OWMwLC4wNi4wOC4xLjEzLjA2WiIvPgogICAgICA8cGF0aCBkPSJNMTU2LjYxLDEyLjc1aC02LjI5czAsMCwwLDBjLS43LDAtLjUyLS41My0uNTItLjUzaC0uMDJjLjIyLS41My40LTEuMDMuNTQtMS40My4xLS4yOS0uMTMtLjU4LS40NC0uNThoLTEuMzJjLS4yLDAtLjM3LjEyLS40NC4zMS0uNDksMS4zOS0xLjQ1LDMuNjEtMi45OCw1LjM5LS4wNy4wOC0uMTEuMTgtLjExLjI4djIuNTljMCwuMDYuMDguMS4xMy4wNiwxLjI4LTEsMi4zLTIuMjksMy4xLTMuNTloMHMuMjYtLjM3LjU1LS4zOGgxLjE1cy4yOS4wNy4zOC4yM2wuNjksMS45OGMuMDguMjMuMzUuMzYuNTkuMjhsMS4xOC0uMzljLjI0LS4wOC4zNy0uMzQuMjktLjU3bC0uNDItMS4yMWMtLjAyLS4wNy0uMDUtLjMxLjI3LS4zMmgzLjY3Yy4yNSwwLC40Ni0uMi40Ni0uNDV2LTEuMjFjMC0uMjUtLjIxLS40NS0uNDYtLjQ1WiIvPgogICAgICA8cGF0aCBkPSJNMTQyLjQyLDIwLjE3aDEuNzdjLjI1LDAsLjQ2LS4yLjQ2LS40NXYtMS4yMWMwLS4yNS0uMjEtLjQ1LS40Ni0uNDVoLTYuOTFjLS4yNSwwLS40Ni4yLS40Ni40NXYxLjIxYzAsLjI1LjIxLjQ1LjQ2LjQ1aDEuNzVjLjA3LDAsLjYyLjA3LjYyLjQ5aDBzMCwyLjM5LDAsMi4zOWgwYzAsLjM1LS4zOC40NS0uNTUuNDhoLTEuODFjLS4yNSwwLS40Ni4yLS40Ni40NXYxLjIxYzAsLjI1LjIxLjQ1LjQ2LjQ1aDYuOTFjLjI1LDAsLjQ2LS4yLjQ2LS40NXYtMS4yMWMwLS4yNS0uMjEtLjQ1LS40Ni0uNDVoLTEuODRjLS4xNS0uMDMtLjQ3LS4xMi0uNTMtLjM5di0yLjU2Yy4wNy0uMzQuNTQtLjQuNi0uNFoiLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPg==">
+    </div>
+  </section>
+
+  <div class="modal-bg hidden" id="modalBg">
+    <div class="modal">
+      <h2>稼働日設定</h2>
+      <p class="msub">曜日・祝日・会社休業日を設定します。日祝は既定で休工です。</p>
+      <div class="mgrp"><div class="gl">稼働する曜日</div><div class="dow" id="dowRow"></div></div>
+      <div class="mgrp">
+        <div class="gl">土曜・祝日</div>
+        <label class="chkrow"><input type="checkbox" id="setSat24"><span>第2・第4土曜を休業にする</span></label>
+        <label class="chkrow"><input type="checkbox" id="setHol"><span>国民の祝日を休工にする <span class="sub">（振替・国民の休日も自動判定）</span></span></label>
+      </div>
+      <div class="mgrp">
+        <div class="gl">会社の連休（休業）</div>
+        <label class="chkrow"><input type="checkbox" id="setGw"><span>GW <span class="sub">4/29〜5/6</span></span></label>
+        <label class="chkrow"><input type="checkbox" id="setObon"><span>お盆 <span class="sub">8/13〜8/16</span></span></label>
+        <label class="chkrow"><input type="checkbox" id="setYe"><span>年末年始 <span class="sub">12/29〜1/3</span></span></label>
+      </div>
+      <div class="mgrp">
+        <div class="gl">会社の休業日（個別）</div>
+        <div class="addline"><input type="date" id="offDate"><button class="btn ghost sm" id="offAdd">追加</button></div>
+        <div class="chips" id="offChips"></div>
+      </div>
+      <div class="mgrp">
+        <div class="gl">出勤日（休工日を稼働に）</div>
+        <div class="addline"><input type="date" id="onDate"><button class="btn ghost sm" id="onAdd">追加</button></div>
+        <div class="chips" id="onChips"></div>
+      </div>
+      <div class="modal-foot"><button class="btn primary" id="modalClose">閉じる</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="loginBg">
+  <div class="modal" style="width:min(380px,100%)">
+    <h2>クラウド同期にログイン</h2>
+    <p class="msub">会社アカウントでログインすると、保存した物件がどのPCでも共有されます。</p>
+    <div class="mfld"><label>メールアドレス</label><input type="email" id="liEmail" autocomplete="username"></div>
+    <div class="mfld"><label>パスワード</label><input type="password" id="liPass" autocomplete="current-password"></div>
+    <div id="liErr" style="color:#d0596a;font-size:12px;min-height:18px;margin:2px 0 6px;"></div>
+    <div class="modal-foot"><button class="btn ghost" id="liCancel">キャンセル</button><button class="btn primary" id="liSubmit">ログイン</button></div>
+  </div>
+</div>
+
+<div id="printPages"></div>
+
+<script>
+(function(){
+  const MS=86400000, SVGNS="http://www.w3.org/2000/svg";
+  let BR=null; try{ BR=(window.parent&&window.parent!==window&&window.parent.KOUTEI_BRIDGE)||null; }catch(_){ BR=null; }
+  let LIBC=null;
+  function ask(msg,okL,cancelL){return new Promise(res=>{const bg=document.createElement("div");bg.className="modal-bg";
+    bg.innerHTML='<div class="modal" style="width:min(380px,100%)"><p class="askp"></p><div class="modal-foot"><button class="btn ghost">'+(cancelL||"キャンセル")+'</button><button class="btn primary">'+(okL||"OK")+'</button></div></div>';
+    bg.querySelector("p").textContent=msg;const bs=bg.querySelectorAll("button");bs[0].onclick=()=>{bg.remove();res(false);};bs[1].onclick=()=>{bg.remove();res(true);};document.body.appendChild(bg);bs[1].focus();});}
+  const PALETTE=["#6b7b8c","#b5793a","#2f6f9f","#2f9f8a","#8a5db0","#3f9d54","#c9762f","#c1526a","#4a86c5","#7a8b1f"];
+  const wdJa=["日","月","火","水","木","金","土"];
+  const STORE="koutei_v2", STORE_OLD="koutei_v1", COMPANY_DEFAULT="株式会社アイビ建築";
+  const CAT_H=30, ROW_H=50, BAR_H=23; let LEAD=14; // LEAD=着工日より前に表示する日数（シートごとに変更可）
+
+  const TEMPLATES={
+    shinchiku:{label:"新築工事",icon:"🏠",dayW:26,desc:"基礎から引渡しまで。木造・小規模建築の標準的な流れ。",meta:"目安 約80日 / 25項目",
+      cats:[
+        {name:"事前準備",tasks:[["工事申請・届出",-14,3],["近隣挨拶（工事前）",-4,2]]},
+        {name:"仮設・準備",tasks:[["仮設工事・足場",0,4],["地縄・遣り方",2,2]]},
+        {name:"基礎工事",tasks:[["根切り・掘削",4,3],["砕石・捨てコン",6,2],["配筋",8,3],["型枠・基礎コン打設",10,4],["養生・脱型",14,3]]},
+        {name:"躯体工事",tasks:[["土台敷き",17,2],["建方・上棟",19,3],["金物・耐力壁",22,4]]},
+        {name:"屋根・外装",tasks:[["屋根工事",25,4],["防水・サッシ取付",28,3],["外壁下地・通気",31,5],["外壁仕上げ塗装",48,6]]},
+        {name:"設備工事",tasks:[["電気配線",30,6],["給排水・設備配管",31,6]]},
+        {name:"内装工事",tasks:[["断熱工事",36,4],["石膏ボード貼り",40,6],["クロス・内装仕上",46,7],["建具・器具付け",53,4]]},
+        {name:"外構・検査",tasks:[["外構・土間コン",57,6],["社内・完了検査",63,2],["クリーニング・引渡",65,3]]},
+      ]},
+    renove:{label:"リノベーション（長期）",icon:"🛠️",dayW:30,desc:"スケルトン改修〜内装・設備一新。マンション/戸建の大規模改修向け。",meta:"目安 約55日 / 20項目",
+      cats:[
+        {name:"事前準備",tasks:[["工事申請・管理組合届出",-14,3],["近隣挨拶（工事前）",-4,2]]},
+        {name:"準備・解体",tasks:[["養生・仮設",0,2],["内装解体",2,5],["設備・配管撤去",5,3],["廃材搬出",7,2]]},
+        {name:"下地・木工事",tasks:[["墨出し・間仕切り",9,4],["木工事・下地組",12,7],["造作工事",19,6]]},
+        {name:"設備工事",tasks:[["電気配線引直し",10,7],["給排水配管引直し",11,7],["空調・換気",18,4]]},
+        {name:"内装仕上げ",tasks:[["断熱・ボード",22,6],["床フローリング",27,5],["クロス・塗装",30,7],["建具工事",36,4]]},
+        {name:"設備機器・検査",tasks:[["キッチン・UB設置",34,4],["器具・照明取付",38,3],["社内検査・手直し",41,3],["クリーニング・引渡",44,3]]},
+      ]},
+    reform:{label:"短期リフォーム",icon:"⚡",dayW:48,desc:"内装・水回りの部分改修。1〜2週間で完了する小工事向け。",meta:"目安 約10日 / 12項目",
+      cats:[
+        {name:"事前準備",tasks:[["工事申請・届出",-10,2],["近隣挨拶（工事前）",-3,1]]},
+        {name:"準備・解体",tasks:[["養生",0,1],["既存撤去・解体",1,2]]},
+        {name:"下地・設備",tasks:[["下地補修",2,2],["設備配管・電気",3,2]]},
+        {name:"仕上げ工事",tasks:[["床張替え",5,2],["クロス張替え",5,3],["塗装・建具",7,2]]},
+        {name:"設備・完了",tasks:[["水回り機器設置",7,2],["器具取付",8,1],["クリーニング・引渡",9,1]]},
+      ]},
+    gaisou:{label:"外装工事",icon:"🎨",dayW:44,desc:"外壁・屋根塗装などの外装リフォーム。足場〜洗浄〜下地〜塗装〜完了。",meta:"目安 約17日 / 18項目",
+      cats:[
+        {name:"事前準備",tasks:[["工事申請・道路使用届",-10,2],["近隣挨拶（工事前）",-3,1]]},
+        {name:"仮設・準備",tasks:[["足場設置・養生",0,2],["高圧洗浄",2,1],["洗浄乾燥・養生",3,1]]},
+        {name:"下地補修",tasks:[["シーリング打替え",4,2],["ひび割れ・下地補修",4,2],["塗装養生・マスキング",6,1]]},
+        {name:"外壁塗装",tasks:[["下塗り（シーラー）",7,1],["中塗り",8,1],["上塗り",9,1]]},
+        {name:"屋根塗装",tasks:[["屋根 下塗り",7,1],["屋根 中塗り・上塗り",10,2]]},
+        {name:"付帯部塗装",tasks:[["軒天・破風板塗装",11,1],["雨樋・鉄部塗装",12,2]]},
+        {name:"仕上げ・完了",tasks:[["点検・手直し",14,1],["足場解体",15,1],["清掃・引渡し",16,1]]},
+      ]},
+  };
+
+  // 標準工事（複数選択で組み合わせ可能な小工事パッケージ）
+  const STD_WORKS={
+    toilet:{label:"トイレ工事",icon:"🚽",days:3,tasks:[["養生・既存便器撤去",0,1],["内装（床・壁）仕上げ",1,1],["便器取付・試運転",2,1]]},
+    ub:{label:"ユニットバス入替工事",icon:"🛁",days:5,tasks:[["養生・既存浴室解体",0,1],["給排水・電気配管移設",1,1],["ユニットバス組立・設置",2,1],["内装補修・ドア枠",3,1],["器具取付・試運転",4,1]]},
+    zairai:{label:"在来浴室工事",icon:"🧱",days:8,tasks:[["養生・解体（斫り）",0,2],["給排水・電気配管",2,1],["土間コン・防水",3,2],["タイル・左官仕上げ",5,2],["器具取付・コーキング",7,1]]},
+    uchimado:{label:"内窓工事",icon:"🪟",days:2,tasks:[["養生・内窓取付",0,1],["調整・清掃",1,1]]},
+    kitchen:{label:"キッチン入替工事",icon:"🍳",days:4,tasks:[["養生・既存キッチン解体",0,1],["給排水・電気・ガス配管",1,1],["キッチン組立・設置",2,1],["内装補修・コーキング",3,1]]},
+    senmen:{label:"洗面入替工事",icon:"🚰",days:3,tasks:[["養生・既存撤去",0,1],["内装（床・壁）補修",1,1],["洗面台取付・接続",2,1]]},
+  };
+  function tplLabel(k){return TEMPLATES[k]?TEMPLATES[k].label:(k==="standard"?"標準工事（組み合わせ）":"工程表");}
+
+  function defaultSettings(){
+    return { workdays:{0:false,1:true,2:true,3:true,4:true,5:true,6:true}, sat24:true,
+      holidaysOff:true, presets:{gw:true,obon:true,yearEnd:true}, customOff:[], customOn:[] };
+  }
+
+  let state=null, selTpl="shinchiku"; const selStd=new Set();
+
+  const pad=n=>String(n).padStart(2,"0");
+  const iso=(y,m,d)=>y+"-"+pad(m)+"-"+pad(d);
+  const iso2=d=>iso(d.getFullYear(),d.getMonth()+1,d.getDate());
+  function parseISO(s){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+  const toISO=d=>iso2(d);
+  function fmt(d){return (d.getMonth()+1)+"/"+d.getDate();}
+  function fmtY(d){return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();}
+  function wd(d){return "（"+wdJa[d.getDay()]+"）";}
+  function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+  function nthMon(y,m,n){let d=new Date(y,m-1,1),c=0;while(true){if(d.getDay()===1){c++;if(c===n)break;}d=new Date(d.getTime()+MS);}return iso2(d);}
+  function natHolidays(year){
+    const H={};const add=(m,d,name)=>{H[iso(year,m,d)]=name;};
+    add(1,1,"元日"); H[nthMon(year,1,2)]="成人の日"; add(2,11,"建国記念の日"); add(2,23,"天皇誕生日");
+    const sh=Math.floor(20.8431+0.242194*(year-1980)-Math.floor((year-1980)/4)); add(3,sh,"春分の日");
+    add(4,29,"昭和の日"); add(5,3,"憲法記念日"); add(5,4,"みどりの日"); add(5,5,"こどもの日");
+    H[nthMon(year,7,3)]="海の日"; add(8,11,"山の日"); H[nthMon(year,9,3)]="敬老の日";
+    const au=Math.floor(23.2488+0.242194*(year-1980)-Math.floor((year-1980)/4)); add(9,au,"秋分の日");
+    H[nthMon(year,10,2)]="スポーツの日"; add(11,3,"文化の日"); add(11,23,"勤労感謝の日");
+    return H;
+  }
+  const HCACHE={};
+  function holidayMap(year){
+    if(HCACHE[year]) return HCACHE[year];
+    const base=natHolidays(year); const map=new Map(Object.entries(base));
+    Object.keys(base).forEach(k=>{const d=parseISO(k);if(d.getDay()===0){let nd=new Date(d.getTime()+MS);while(map.has(iso2(nd)))nd=new Date(nd.getTime()+MS);map.set(iso2(nd),"振替休日");}});
+    let cur=new Date(year,0,1),end=new Date(year,11,31),extra=[];
+    while(cur<=end){const k=iso2(cur);if(!map.has(k)&&cur.getDay()!==0){const p=iso2(new Date(cur.getTime()-MS)),n=iso2(new Date(cur.getTime()+MS));if(map.has(p)&&map.has(n))extra.push(k);}cur=new Date(cur.getTime()+MS);}
+    extra.forEach(k=>map.set(k,"国民の休日"));
+    HCACHE[year]=map; return map;
+  }
+  function holidayName(d){return holidayMap(d.getFullYear()).get(iso2(d))||null;}
+  function inGW(d){const m=d.getMonth()+1,day=d.getDate();return (m===4&&day>=29)||(m===5&&day<=6);}
+  function inObon(d){return d.getMonth()+1===8&&d.getDate()>=13&&d.getDate()<=16;}
+  function inYearEnd(d){const m=d.getMonth()+1,day=d.getDate();return (m===12&&day>=29)||(m===1&&day<=3);}
+  function nthSat(d){return Math.ceil(d.getDate()/7);} // 1st..
+  function isSat24(d){const n=nthSat(d);return d.getDay()===6&&(n===2||n===4);}
+
+  function isWorkday(d){
+    const s=state.settings, k=iso2(d), dow=d.getDay();
+    if(s.customOn.includes(k)) return true;
+    if(s.customOff.includes(k)) return false;
+    if(s.sat24&&isSat24(d)) return false;
+    if(s.presets.gw&&inGW(d)) return false;
+    if(s.presets.obon&&inObon(d)) return false;
+    if(s.presets.yearEnd&&inYearEnd(d)) return false;
+    if(s.holidaysOff&&holidayName(d)) return false;
+    if(!s.workdays[dow]) return false;
+    return true;
+  }
+  function offReason(d){
+    if(isWorkday(d)) return null;
+    const dow=d.getDay();
+    if(dow===0||holidayName(d)) return "sunhol";
+    if((state.settings.sat24&&isSat24(d))||(state.settings.presets.gw&&inGW(d))||(state.settings.presets.obon&&inObon(d))||(state.settings.presets.yearEnd&&inYearEnd(d))||state.settings.customOff.includes(iso2(d))) return "company";
+    return "week";
+  }
+
+  // template picker
+  const tplGrid=document.getElementById("tplGrid");
+  Object.entries(TEMPLATES).forEach(([key,t])=>{
+    const el=document.createElement("button");el.className="tpl"+(key===selTpl?" sel":"");el.dataset.k=key;
+    el.innerHTML='<div class="ic">'+t.icon+'</div><div class="tt">'+t.label+'</div><div class="dd">'+t.desc+'</div><div class="meta">'+t.meta+'</div>';
+    el.addEventListener("click",()=>{selTpl=key;selStd.clear();syncPick();});
+    el.addEventListener("dblclick",()=>createFromTemplate(key));
+    tplGrid.appendChild(el);
+  });
+  const stdGrid=document.getElementById("stdGrid");
+  Object.entries(STD_WORKS).forEach(([key,w])=>{
+    const el=document.createElement("button");el.className="std";el.dataset.k=key;
+    el.innerHTML='<span class="ic2">'+w.icon+'</span><span class="tx"><span class="nm2">'+w.label+'</span><br><span class="dd2">目安 約'+w.days+'日 / '+w.tasks.length+'工程</span></span><span class="ck"></span>';
+    el.addEventListener("click",()=>{selStd.has(key)?selStd.delete(key):selStd.add(key);syncPick();});
+    stdGrid.appendChild(el);
+  });
+  function syncPick(){
+    [...tplGrid.children].forEach(c=>c.classList.toggle("sel",selStd.size===0&&c.dataset.k===selTpl));
+    [...stdGrid.children].forEach(c=>c.classList.toggle("sel",selStd.has(c.dataset.k)));
+  }
+  syncPick();
+  function newUid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7);}
+  function mkTask(name,start,dur){return {name,start,dur,done:false,vendor:"",worker:"",workHolidays:false,linkPrev:false};}
+  async function dupOK(nm){
+    const dupe=loadLib().find(e=>e.name===nm);
+    return !dupe||await ask("同じ現場名/工事名「"+nm+"」の物件が既に保存されています。このまま新しいシートを作りますか？（保存済みの物件を使う場合は、下の一覧から「開く」か「複製」を選んでください）","新しく作る","やめる");
+  }
+  async function createFromTemplate(key){
+    const t=TEMPLATES[key];
+    const nm=t.label+"工程表";
+    if(!(await dupOK(nm)))return;
+    state={ name:nm, uid:newUid(), template:key,
+      start:toISO(new Date()), dayW:t.dayW, settings:defaultSettings(),
+      manager:"", createdDate:toISO(new Date()), company:COMPANY_DEFAULT,
+      cats:t.cats.map((c,i)=>({name:c.name,color:PALETTE[i%PALETTE.length],
+        tasks:c.tasks.map(([name,start,dur])=>mkTask(name,start,dur))})) };
+    enterEditor();
+  }
+  document.getElementById("createBtn").addEventListener("click",async()=>{
+    if(!selStd.size){toast("標準工事をチェックしてから押してください（テンプレートはダブルクリックで作成）");return;}
+    const parts=Object.keys(STD_WORKS).filter(k=>selStd.has(k)).map(k=>STD_WORKS[k]);
+    const nm=parts.map(p=>p.label.replace(/工事$/,"")).join("＋")+"工事";
+    if(!(await dupOK(nm)))return;
+    const cats=[{name:"事前準備",color:PALETTE[0],tasks:[mkTask("工事申請・届出",-7,2),mkTask("近隣挨拶（工事前）",-3,1)]}];
+    let off=0;
+    parts.forEach((p,i)=>{
+      cats.push({name:p.label,color:PALETTE[(i+1)%PALETTE.length],tasks:p.tasks.map(([n,s,d])=>mkTask(n,s+off,d))});
+      off+=p.days;
+    });
+    state={ name:nm, uid:newUid(), template:"standard", start:toISO(new Date()), dayW:44,
+      settings:defaultSettings(), manager:"", createdDate:toISO(new Date()), company:COMPANY_DEFAULT, cats };
+    enterEditor();
+  });
+
+  function persist(){try{localStorage.setItem(STORE,JSON.stringify(state));}catch(e){}}
+  function normalize(s){
+    s.settings=Object.assign(defaultSettings(),s.settings||{});
+    s.settings.workdays=Object.assign(defaultSettings().workdays,s.settings.workdays||{});
+    s.settings.presets=Object.assign(defaultSettings().presets,s.settings.presets||{});
+    if(typeof s.settings.sat24==="undefined")s.settings.sat24=true;
+    s.settings.customOff=s.settings.customOff||[]; s.settings.customOn=s.settings.customOn||[];
+    s.manager=s.manager||""; s.createdDate=s.createdDate||toISO(new Date()); s.company=s.company||COMPANY_DEFAULT;
+    s.uid=s.uid||newUid(); if(typeof s.lead!=="number")s.lead=14;
+    (s.cats||[]).forEach(c=>c.tasks.forEach(t=>{t.vendor=t.vendor||"";t.worker=t.worker||"";t.workHolidays=!!t.workHolidays;t.linkPrev=!!t.linkPrev;}));
+    return s;
+  }
+
+  const grid=document.getElementById("grid"),timehead=document.getElementById("timehead"),
+        labels=document.getElementById("labels"),lane=document.getElementById("lane");
+  const tip=document.createElement("div");tip.className="duration-tip";document.body.appendChild(tip);
+  const dropline=document.createElement("div");dropline.className="dropline";document.body.appendChild(dropline);
+  const toastEl=document.createElement("div");toastEl.className="toast";document.body.appendChild(toastEl);let toastT=null;
+  function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove("show"),2000);}
+  let barMap=new Map(), taskY=new Map(), linkSvg=null;
+
+  function enterEditor(){
+    document.getElementById("setup").classList.add("hidden");
+    document.getElementById("editor").classList.remove("hidden");
+    document.getElementById("startDate2").value=state.start;
+    if(typeof state.lead!=="number")state.lead=14;
+    LEAD=state.lead;
+    syncLeadUI();
+    document.getElementById("tplBadge").textContent=tplLabel(state.template);
+    state.cats.forEach(c=>c.tasks.forEach(t=>{if(t.start<-LEAD)t.start=-LEAD;snapStart(t);}));
+    render();persist();
+  }
+
+  const dAt=i=>new Date(parseISO(state.start).getTime()+i*MS);
+  function allTasks(){return state.cats.flatMap(c=>c.tasks);}
+  function flatTasks(){const a=[];state.cats.forEach((c,ci)=>c.tasks.forEach((t,ti)=>a.push({t,ci,ti})));return a;}
+
+  // working-day rendering
+  function barEndIndex(t){ // inclusive calendar index of last cell
+    if(t.workHolidays) return t.start+Math.max(1,t.dur)-1;
+    let count=0,i=t.start,guard=0;
+    while(guard<2000){ if(isWorkday(dAt(i)))count++; if(count>=t.dur) return i; i++; guard++; }
+    return i;
+  }
+  function barSpan(t){return barEndIndex(t)-t.start+1;}
+  function countWork(a,b,wh){let n=0;for(let i=a;i<=b;i++){if(wh||isWorkday(dAt(i)))n++;}return n;}
+  function snapStart(t){ if(t.workHolidays)return; let i=Math.max(-LEAD,t.start),g=0; while(!isWorkday(dAt(i))&&g<800){i++;g++;} t.start=i; }
+  function totalDays(){let m=14;allTasks().forEach(t=>m=Math.max(m,barEndIndex(t)+1));return m+5+((7-((m+5)%7))%7);}
+
+  function render(){
+    const dayW=state.dayW,total=totalDays(),laneW=dayW*(total+LEAD);
+    grid.style.setProperty("--day-w",dayW+"px");
+    timehead.style.width=laneW+"px";lane.style.width=laneW+"px";
+    buildHeader(total);buildLabels();buildLane(total);updateStats();updateDoc();fitBoard();
+  }
+  function fitBoard(){
+    const sc=document.getElementById("scroller");
+    if(!sc||document.getElementById("editor").classList.contains("hidden"))return;
+    const avail=window.innerHeight-sc.getBoundingClientRect().top-70;
+    sc.style.maxHeight=Math.max(260,avail)+"px";
+  }
+  window.addEventListener("resize",fitBoard);
+
+  function buildHeader(total){
+    timehead.innerHTML="";const months=document.createElement("div");months.className="months";
+    const days=document.createElement("div");days.className="days";const dayW=state.dayW;let mStart=-LEAD;
+    for(let i=-LEAD;i<=total;i++){
+      const prev=i>-LEAD?dAt(i-1):null,cur=i<total?dAt(i):null;
+      if(i===total||(prev&&cur.getMonth()!==prev.getMonth())){
+        const seg=document.createElement("div");seg.className="month";seg.style.width=(dayW*(i-mStart))+"px";
+        seg.textContent=dAt(mStart).getFullYear()+"年"+(dAt(mStart).getMonth()+1)+"月";months.appendChild(seg);mStart=i;
+      }
+      if(i<total){
+        const d=cur,w=d.getDay(),r=offReason(d),hn=holidayName(d);
+        const cell=document.createElement("div");
+        cell.className="day"+(w===0?" sun":w===6?" sat":"")+(w===1?" weekstart":"")+(hn?" hol":"")+(r?" off":"")+(r==="company"?" comp":"");
+        if(hn)cell.title=hn;
+        cell.innerHTML='<span class="dn">'+d.getDate()+'</span><span class="wd">'+wdJa[w]+'</span>';
+        days.appendChild(cell);
+      }
+    }
+    timehead.appendChild(months);timehead.appendChild(days);
+  }
+
+  function buildLabels(){
+    labels.innerHTML="";let fi=0;
+    state.cats.forEach((cat,ci)=>{
+      const ch=document.createElement("div");ch.className="catlabel";ch.dataset.ci=ci;
+      ch.style.top="calc(var(--head-h) + "+(ci*CAT_H)+"px)"; // カテゴリーは上に積み重なって残る
+      const cgrip=document.createElement("span");cgrip.className="grip";cgrip.textContent="⠿";cgrip.title="ドラッグでカテゴリーごと並べ替え";
+      cgrip.addEventListener("pointerdown",e=>startCatReorder(ci,ch,e));
+      const dot=document.createElement("span");dot.className="cdot";dot.style.background=cat.color;
+      const nm=document.createElement("span");nm.className="cnm";nm.textContent=cat.name;nm.contentEditable="true";nm.spellcheck=false;
+      nm.addEventListener("blur",()=>{cat.name=nm.textContent.trim()||cat.name;nm.textContent=cat.name;persist();});
+      nm.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();nm.blur();}});
+      const add=document.createElement("button");add.className="addrow";add.textContent="＋工程";add.addEventListener("click",()=>addTask(ci));
+      const cdel=document.createElement("button");cdel.className="cdel";cdel.textContent="×";cdel.title="カテゴリ削除";
+      cdel.addEventListener("click",()=>{ask("「"+cat.name+"」を削除しますか？","削除する").then(ok=>{if(ok){state.cats.splice(ci,1);render();persist();}});});
+      ch.append(cgrip,dot,nm,add,cdel);labels.appendChild(ch);
+
+      cat.tasks.forEach((t,ti)=>{
+        const isFirst=(fi===0);
+        const row=document.createElement("div");row.className="rowlabel"+(t.done?" done":"");
+        row.style.setProperty("--rc",cat.color);row.dataset.ci=ci;row.dataset.ti=ti;
+        const l1=document.createElement("div");l1.className="rl1";
+        const grip=document.createElement("span");grip.className="grip";grip.textContent="⠿";grip.title="ドラッグで並べ替え";
+        grip.addEventListener("pointerdown",e=>startReorder(ci,ti,row,e));
+        const lnk=document.createElement("button");lnk.className="lnk"+(t.linkPrev?" on":"");lnk.textContent="🔗";lnk.title="前の工程と連結";
+        lnk.disabled=isFirst; lnk.addEventListener("click",()=>{t.linkPrev=!t.linkPrev;render();persist();});
+        const chk=document.createElement("span");chk.className="chk"+(t.done?" on":"");chk.title="完了";
+        chk.addEventListener("click",()=>{t.done=!t.done;render();persist();});
+        const name=document.createElement("span");name.className="nm";name.textContent=t.name;name.contentEditable="true";name.spellcheck=false;
+        name.addEventListener("blur",()=>{t.name=name.textContent.trim()||t.name;name.textContent=t.name;render();persist();});
+        name.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();name.blur();}});
+        const dur=document.createElement("span");dur.className="dur";dur.textContent=t.dur+"日";
+        const del=document.createElement("button");del.className="del";del.textContent="×";del.title="削除";
+        del.addEventListener("click",()=>{cat.tasks.splice(ti,1);render();persist();});
+        l1.append(grip,lnk,chk,name,dur,del);
+        const l2=document.createElement("div");l2.className="rl2";
+        const ven=document.createElement("input");ven.type="text";ven.placeholder="業者";ven.value=t.vendor;
+        ven.addEventListener("input",()=>{t.vendor=ven.value;persist();});
+        ven.addEventListener("keydown",e=>{
+          if(e.key==="Enter"){e.preventDefault();
+            const all=[...labels.querySelectorAll(".rl2 input")];const i=all.indexOf(ven);
+            if(all[i+1]){all[i+1].focus();all[i+1].select();}else ven.blur();
+          }
+        });
+        l2.append(ven);
+        row.append(l1,l2);labels.appendChild(row);
+        fi++;
+      });
+    });
+    const ac=document.createElement("div");ac.className="addcat";
+    const b=document.createElement("button");b.textContent="＋ カテゴリを追加";b.addEventListener("click",addCategory);
+    ac.appendChild(b);labels.appendChild(ac);
+  }
+
+  function rowLayout(){
+    let y=0;const bands=[],taskRows=[];
+    state.cats.forEach((cat,ci)=>{bands.push({y,ci});y+=CAT_H;cat.tasks.forEach((t,ti)=>{taskRows.push({y,cat,t,ci,ti});y+=ROW_H;});});
+    return {bands,taskRows,totalH:y};
+  }
+
+  function buildLane(total){
+    lane.innerHTML="";barMap=new Map();taskY=new Map();const dayW=state.dayW;const lay=rowLayout();lane.style.height=(lay.totalH+6)+"px";
+    for(let i=-LEAD;i<total;i++){
+      const d=dAt(i),w=d.getDay(),r=offReason(d);
+      if(r||w===1){
+        const c=document.createElement("div");c.className="colshade"+(w===1?" weekstart":"");
+        c.style.left=((i+LEAD)*dayW)+"px";c.style.width=dayW+"px";
+        if(r==="sunhol")c.style.background="var(--sunday)";else if(r==="company")c.style.background="var(--company)";else if(r==="week")c.style.background="var(--weekend)";
+        lane.appendChild(c);
+      }
+    }
+    lay.bands.forEach(b=>{const el=document.createElement("div");el.className="catband";el.style.top=b.y+"px";lane.appendChild(el);});
+    lay.taskRows.forEach(r=>{const el=document.createElement("div");el.className="rowline";el.style.top=r.y+"px";lane.appendChild(el);taskY.set(r.t,r.y);});
+    const now=new Date(),ti=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-parseISO(state.start))/MS);
+    if(ti>=-LEAD&&ti<=total){const tl=document.createElement("div");tl.className="todayline";tl.style.left=((ti+LEAD)*dayW)+"px";lane.appendChild(tl);}
+    // 着工ライン
+    const sl=document.createElement("div");sl.className="startline";sl.style.left=(LEAD*dayW)+"px";lane.appendChild(sl);
+    // link svg (under bars)
+    linkSvg=document.createElementNS(SVGNS,"svg");linkSvg.setAttribute("class","links");
+    linkSvg.setAttribute("width",dayW*(total+LEAD));linkSvg.setAttribute("height",lay.totalH);lane.appendChild(linkSvg);
+    lay.taskRows.forEach(r=>{
+      const bar=document.createElement("div");bar.className="bar"+(r.t.done?" done":"");
+      bar.style.background=r.cat.color;bar.style.top=(r.y+(ROW_H-BAR_H)/2)+"px";
+      bar.title=r.t.name;
+      bar.innerHTML='<div class="handle l"></div><div class="handle r"></div>';
+      positionBar(bar,r.t);addHatch(bar,r.t);lane.appendChild(bar);barMap.set(r.t,bar);makeDraggable(bar,r.t);
+    });
+    drawLinks();
+  }
+  function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+  function positionBar(bar,t){bar.style.left=((t.start+LEAD)*state.dayW)+"px";bar.style.width=(barSpan(t)*state.dayW-3)+"px";}
+  function addHatch(bar,t){
+    [...bar.querySelectorAll(".hatch")].forEach(h=>h.remove());
+    if(t.workHolidays)return;const dayW=state.dayW,end=barEndIndex(t);
+    for(let g=t.start;g<=end;g++){if(!isWorkday(dAt(g))){const h=document.createElement("div");h.className="hatch";h.style.left=((g-t.start)*dayW)+"px";h.style.width=dayW+"px";bar.appendChild(h);}}
+  }
+  function drawLinks(){
+    if(!linkSvg)return;while(linkSvg.firstChild)linkSvg.removeChild(linkSvg.firstChild);
+    const flat=flatTasks(),dayW=state.dayW;
+    for(let k=1;k<flat.length;k++){
+      const cur=flat[k].t;if(!cur.linkPrev)continue;const prev=flat[k-1].t;
+      const y1=(taskY.get(prev)||0)+ROW_H/2, y2=(taskY.get(cur)||0)+ROW_H/2;
+      const x1=(barEndIndex(prev)+1+LEAD)*dayW, x2=(cur.start+LEAD)*dayW;
+      const path=document.createElementNS(SVGNS,"polyline");
+      const el=x1+8;
+      path.setAttribute("points",[x1+","+y1, el+","+y1, el+","+y2, x2+","+y2].join(" "));
+      path.setAttribute("fill","none");path.setAttribute("stroke","var(--accent)");
+      path.setAttribute("stroke-width","1.6");path.setAttribute("stroke-dasharray","3 2");path.setAttribute("opacity",".85");
+      linkSvg.appendChild(path);
+      const dot=document.createElementNS(SVGNS,"circle");dot.setAttribute("cx",x2);dot.setAttribute("cy",y2);dot.setAttribute("r","2.6");dot.setAttribute("fill","var(--accent)");linkSvg.appendChild(dot);
+    }
+  }
+
+  function groupOf(t){
+    const flat=flatTasks();let i=flat.findIndex(x=>x.t===t);let s=i,e=i;
+    while(s>0&&flat[s].t.linkPrev)s--;
+    while(e+1<flat.length&&flat[e+1].t.linkPrev)e++;
+    return flat.slice(s,e+1).map(x=>x.t);
+  }
+
+  function makeDraggable(bar,t){
+    let mode=null,startX=0,orig=null,group=null,groupOrig=null,origEnd=0;
+    function down(e){
+      mode=e.target.classList.contains("handle")?(e.target.classList.contains("l")?"resize-l":"resize-r"):"move";
+      startX=e.clientX;orig={start:t.start,dur:t.dur};origEnd=barEndIndex(t);
+      group=mode==="move"?groupOf(t):[t];
+      groupOrig=group.map(x=>x.start);
+      bar.classList.add("dragging");bar.setPointerCapture(e.pointerId);showTip(e,t);e.preventDefault();
+    }
+    function move(e){
+      if(!mode)return;const total=totalDays();const d=Math.round((e.clientX-startX)/state.dayW);
+      if(mode==="move"){
+        let ns=Math.max(-LEAD,orig.start+d);const tmp={start:ns,dur:t.dur,workHolidays:t.workHolidays};snapStart(tmp);ns=tmp.start;
+        let eff=ns-orig.start;const minS=Math.min(...groupOrig);if(minS+eff<-LEAD)eff=-LEAD-minS;
+        group.forEach((x,gi)=>{x.start=groupOrig[gi]+eff;});
+      } else if(mode==="resize-r"){
+        const newEnd=Math.max(t.start,origEnd+d);t.dur=Math.max(1,countWork(t.start,newEnd,t.workHolidays));
+      } else { // resize-l : keep end fixed
+        let ns=clamp(orig.start+d,-LEAD,origEnd);const tmp={start:ns,dur:1,workHolidays:t.workHolidays};snapStart(tmp);ns=Math.min(tmp.start,origEnd);
+        t.start=ns;t.dur=Math.max(1,countWork(ns,origEnd,t.workHolidays));
+      }
+      group.forEach(x=>{const b=barMap.get(x);if(b){positionBar(b,x);addHatch(b,x);}});
+      drawLinks();showTip(e,t);
+    }
+    function up(){if(!mode)return;mode=null;bar.classList.remove("dragging");hideTip();render();persist();}
+    bar.addEventListener("pointerdown",down);bar.addEventListener("pointermove",move);
+    bar.addEventListener("pointerup",up);bar.addEventListener("pointercancel",up);
+  }
+  function showTip(e,t){const s=dAt(t.start),en=dAt(barEndIndex(t));
+    tip.textContent=fmt(s)+wd(s)+" 〜 "+fmt(en)+wd(en)+" ・ 実働"+t.dur+"日 ("+barSpan(t)+"日間)";
+    tip.style.left=(e.clientX+14)+"px";tip.style.top=(e.clientY-34)+"px";tip.style.opacity="1";}
+  function hideTip(){tip.style.opacity="0";}
+
+  function startReorder(ci,ti,row,e){
+    e.preventDefault();const src={ci,ti};row.classList.add("dragsrc");document.body.style.userSelect="none";let target=null;
+    function mv(ev){target=computeTarget(ev.clientY);const board=document.getElementById("scroller").getBoundingClientRect();
+      dropline.style.display="block";dropline.style.left=board.left+"px";dropline.style.width=board.width+"px";dropline.style.top=target.y+"px";}
+    function up(){document.removeEventListener("pointermove",mv);document.removeEventListener("pointerup",up);
+      dropline.style.display="none";document.body.style.userSelect="";row.classList.remove("dragsrc");
+      if(target){moveTask(src,{ci:target.ci,ti:target.ti});render();persist();}}
+    document.addEventListener("pointermove",mv);document.addEventListener("pointerup",up);
+    try{row.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  function catOffsets(){ // 各カテゴリーの自然位置（sticky固定の影響を受けない）
+    const offs=[];let y=0;
+    state.cats.forEach(c=>{offs.push(y);y+=CAT_H+c.tasks.length*ROW_H;});
+    offs.push(y);return offs;
+  }
+  function computeTarget(y){
+    const base=labels.getBoundingClientRect().top;const offs=catOffsets();
+    if(y<base+offs[0]+CAT_H) return {ci:0,ti:0,y:base+offs[0]+CAT_H};
+    for(let ci=0;ci<state.cats.length;ci++){
+      const top=base+offs[ci],bottom=base+offs[ci+1];
+      if(y>=top&&y<bottom){
+        const rel=y-(top+CAT_H);
+        const ti=clamp(Math.round(rel/ROW_H),0,state.cats[ci].tasks.length);
+        return {ci,ti,y:top+CAT_H+ti*ROW_H};
+      }
+    }
+    const ci=state.cats.length-1;
+    return {ci,ti:state.cats[ci].tasks.length,y:base+offs[offs.length-1]};
+  }
+  function startCatReorder(ci,ch,e){
+    e.preventDefault();e.stopPropagation();
+    ch.classList.add("dragsrc");document.body.style.userSelect="none";let target=null;
+    function mv(ev){
+      const base=labels.getBoundingClientRect().top;const offs=catOffsets();
+      let idx=state.cats.length;
+      for(let k=0;k<state.cats.length;k++){
+        const blockTop=base+offs[k],blockH=offs[k+1]-offs[k];
+        if(ev.clientY<blockTop+blockH/2){idx=k;break;}
+      }
+      target=idx;
+      const board=document.getElementById("scroller").getBoundingClientRect();
+      dropline.style.display="block";dropline.style.left=board.left+"px";dropline.style.width=board.width+"px";
+      dropline.style.top=(base+offs[idx])+"px";
+    }
+    function up(){
+      document.removeEventListener("pointermove",mv);document.removeEventListener("pointerup",up);
+      dropline.style.display="none";document.body.style.userSelect="";ch.classList.remove("dragsrc");
+      if(target!=null&&target!==ci&&target!==ci+1){
+        const [c]=state.cats.splice(ci,1);
+        let ni=target;if(ci<target)ni--;
+        state.cats.splice(clamp(ni,0,state.cats.length),0,c);
+        render();persist();
+      }
+    }
+    document.addEventListener("pointermove",mv);document.addEventListener("pointerup",up);
+    try{ch.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  function moveTask(src,dst){
+    const t=state.cats[src.ci].tasks[src.ti];state.cats[src.ci].tasks.splice(src.ti,1);
+    let ti=dst.ti;if(src.ci===dst.ci&&src.ti<dst.ti)ti--;ti=clamp(ti,0,state.cats[dst.ci].tasks.length);
+    state.cats[dst.ci].tasks.splice(ti,0,t);
+  }
+
+  function addTask(ci){
+    const cat=state.cats[ci],last=cat.tasks[cat.tasks.length-1];let start=last?barEndIndex(last)+1:0;
+    const nt={name:"新しい工程",start,dur:3,done:false,vendor:"",worker:"",workHolidays:false,linkPrev:false};snapStart(nt);
+    cat.tasks.push(nt);render();persist();
+    const rows=labels.querySelectorAll(".rowlabel .nm");let idx=0;for(let k=0;k<ci;k++)idx+=state.cats[k].tasks.length;idx+=cat.tasks.length-1;
+    if(rows[idx]){rows[idx].focus();document.getSelection().selectAllChildren(rows[idx]);}
+  }
+  function addCategory(){
+    state.cats.push({name:"新しいカテゴリ",color:PALETTE[state.cats.length%PALETTE.length],
+      tasks:[{name:"新しい工程",start:0,dur:3,done:false,vendor:"",worker:"",workHolidays:false,linkPrev:false}]});
+    render();persist();
+  }
+
+  function projectRange(){
+    const ts=allTasks();if(!ts.length)return [0,0];
+    let min=Infinity,max=-Infinity;ts.forEach(t=>{min=Math.min(min,t.start);max=Math.max(max,barEndIndex(t));});
+    return [min,max];
+  }
+  function updateStats(){
+    const ts=allTasks();const [min,max]=projectRange();let done=0,work=0;ts.forEach(t=>{if(t.done)done++;});
+    const m0=Math.max(0,min); // 工期は着工日以降で計算（事前準備は含めない）
+    for(let i=m0;i<=max;i++)if(isWorkday(dAt(i)))work++;
+    document.getElementById("stCal").textContent=(ts.length?(max-m0+1):0)+"日";
+    document.getElementById("stWork").textContent=work+"日";
+    document.getElementById("stProg").textContent=ts.length?Math.round(done/ts.length*100)+"%":"0%";
+  }
+  function updateDoc(){
+    const [min,max]=projectRange();const ds=dAt(Math.max(0,min)),de=dAt(max);
+    const created=state.createdDate?fmtY(parseISO(state.createdDate)):"—";
+    const dhTitle=document.getElementById("dhTitle");
+    if(document.activeElement!==dhTitle) dhTitle.textContent=state.name||"（無題）";
+    const term=document.getElementById("dhTerm");
+    if(document.activeElement!==term) term.textContent=state.termOverride||("工期："+fmtY(ds)+wd(ds)+" 〜 "+fmtY(de)+wd(de));
+    const mgr=document.getElementById("dhMgr");
+    if(document.activeElement!==mgr) mgr.textContent=state.manager||"";
+    const cr=document.getElementById("dhCreated");
+    if(document.activeElement!==cr) cr.textContent=state.createdText||created;
+    const df=document.getElementById("docFooter");
+    if(document.activeElement!==df) df.textContent=state.company||"";
+  }
+
+  // settings modal
+  const modalBg=document.getElementById("modalBg");
+  const dowRow=document.getElementById("dowRow");
+  ["月","火","水","木","金","土","日"].forEach((lbl,i)=>{
+    const dow=(i+1)%7;const b=document.createElement("button");b.textContent=lbl;b.dataset.dow=dow;
+    b.addEventListener("click",()=>{state.settings.workdays[dow]=!state.settings.workdays[dow];syncModal();render();persist();});
+    dowRow.appendChild(b);
+  });
+  function syncModal(){
+    [...dowRow.children].forEach(b=>b.classList.toggle("on",!!state.settings.workdays[b.dataset.dow]));
+    document.getElementById("setSat24").checked=state.settings.sat24;
+    document.getElementById("setHol").checked=state.settings.holidaysOff;
+    document.getElementById("setGw").checked=state.settings.presets.gw;
+    document.getElementById("setObon").checked=state.settings.presets.obon;
+    document.getElementById("setYe").checked=state.settings.presets.yearEnd;
+    renderChips();
+  }
+  function renderChips(){
+    const off=document.getElementById("offChips");off.innerHTML="";
+    state.settings.customOff.slice().sort().forEach(d=>{const c=document.createElement("span");c.className="chip";c.innerHTML="<span>"+d+"</span>";
+      const x=document.createElement("button");x.textContent="×";x.addEventListener("click",()=>{state.settings.customOff=state.settings.customOff.filter(v=>v!==d);syncModal();render();persist();});c.appendChild(x);off.appendChild(c);});
+    const on=document.getElementById("onChips");on.innerHTML="";
+    state.settings.customOn.slice().sort().forEach(d=>{const c=document.createElement("span");c.className="chip on-ex";c.innerHTML="<span>"+d+"</span>";
+      const x=document.createElement("button");x.textContent="×";x.addEventListener("click",()=>{state.settings.customOn=state.settings.customOn.filter(v=>v!==d);syncModal();render();persist();});c.appendChild(x);on.appendChild(c);});
+  }
+  document.getElementById("setSat24").addEventListener("change",e=>{state.settings.sat24=e.target.checked;render();persist();});
+  document.getElementById("setHol").addEventListener("change",e=>{state.settings.holidaysOff=e.target.checked;render();persist();});
+  document.getElementById("setGw").addEventListener("change",e=>{state.settings.presets.gw=e.target.checked;render();persist();});
+  document.getElementById("setObon").addEventListener("change",e=>{state.settings.presets.obon=e.target.checked;render();persist();});
+  document.getElementById("setYe").addEventListener("change",e=>{state.settings.presets.yearEnd=e.target.checked;render();persist();});
+  document.getElementById("offAdd").addEventListener("click",()=>{const v=document.getElementById("offDate").value;if(v&&!state.settings.customOff.includes(v)){state.settings.customOff.push(v);syncModal();render();persist();}});
+  document.getElementById("onAdd").addEventListener("click",()=>{const v=document.getElementById("onDate").value;if(v&&!state.settings.customOn.includes(v)){state.settings.customOn.push(v);syncModal();render();persist();}});
+  document.getElementById("calBtn").addEventListener("click",()=>{syncModal();modalBg.classList.remove("hidden");});
+  document.getElementById("modalClose").addEventListener("click",()=>modalBg.classList.add("hidden"));
+  modalBg.addEventListener("click",e=>{if(e.target===modalBg)modalBg.classList.add("hidden");});
+
+  (function(){const dh=document.getElementById("dhTitle");
+    dh.addEventListener("input",()=>{state.name=dh.textContent;persist();});
+    dh.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();dh.blur();}});
+    dh.addEventListener("blur",()=>updateDoc());
+  })();
+  // 紙面上で直接編集：工期・担当者・作成日・社名
+  (function(){
+    function wire(id,set){
+      const el=document.getElementById(id);
+      el.addEventListener("input",()=>{set(el.textContent);persist();});
+      el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();el.blur();}});
+      el.addEventListener("blur",()=>{updateDoc();persist();});
+    }
+    wire("dhTerm",v=>{state.termOverride=v.trim()||null;}); // 空にすると自動計算に戻る
+    wire("dhMgr",v=>{state.manager=v.trim();});
+    wire("dhCreated",v=>{state.createdText=v.trim()||null;});
+    wire("docFooter",v=>{state.company=v.trim();});
+  })();
+  function syncLeadUI(){
+    const sd=parseISO(state.start);
+    document.getElementById("leadDate").value=toISO(new Date(sd.getTime()-LEAD*MS));
+    document.getElementById("leadSel").value=[0,7,14,21,28].includes(LEAD)?String(LEAD):"custom";
+  }
+  function applyLead(v){
+    state.lead=clamp(Math.round(v),0,90); LEAD=state.lead;
+    state.cats.forEach(c=>c.tasks.forEach(t=>{if(t.start<-LEAD)t.start=-LEAD;snapStart(t);}));
+    syncLeadUI(); render(); persist();
+  }
+  document.getElementById("startDate2").addEventListener("change",e=>{if(e.target.value){state.start=e.target.value;syncLeadUI();render();persist();}});
+  document.getElementById("leadSel").addEventListener("change",e=>{if(e.target.value!=="custom")applyLead(+e.target.value);});
+  document.getElementById("leadDate").addEventListener("change",e=>{
+    if(!e.target.value)return;
+    applyLead((parseISO(state.start)-parseISO(e.target.value))/MS);
+  });
+  document.getElementById("zIn").addEventListener("click",()=>{state.dayW=clamp(state.dayW+6,14,72);render();persist();});
+  document.getElementById("zOut").addEventListener("click",()=>{state.dayW=clamp(state.dayW-6,14,72);render();persist();});
+  // ---------- 印刷：A3横に自動フィット、小さすぎる場合は横方向に複数ページ分割 ----------
+  const PAGE_W=1520, PAGE_H=1040, MIN_ZOOM=0.7, MAX_ZOOM=1.5; // A3横(420×297mm)−余白 の96dpi換算
+  function buildPrintPages(custMode){
+    const holder=document.getElementById("printPages");holder.innerHTML="";
+    const gridEl=document.getElementById("grid");
+    const leftW=parseFloat(getComputedStyle(gridEl).getPropertyValue("--left-w"))||280;
+    const dayW=state.dayW,total=totalDays()+LEAD,laneW=dayW*total;
+    const laneH=lane.offsetHeight, fullW=leftW+laneW, fullH=52+laneH;
+    let zoom=Math.min(MAX_ZOOM,PAGE_W/fullW,PAGE_H/fullH);
+    let pages=1,sliceW=laneW;
+    if(zoom<MIN_ZOOM){ // これ以上縮めると文字が読めない → 横に分割
+      zoom=MIN_ZOOM;
+      sliceW=Math.max(dayW,Math.floor((PAGE_W/zoom-leftW)/dayW)*dayW);
+      pages=Math.ceil(laneW/sliceW);
+    }
+    const srcInputs=[...gridEl.querySelectorAll("input")];
+    for(let p=0;p<pages;p++){
+      const pg=document.createElement("div");pg.className="ppage";pg.style.zoom=zoom;
+      if(pages>1){const pn=document.createElement("div");pn.className="pnum";pn.textContent=(p+1)+" / "+pages+" ページ";pg.appendChild(pn);}
+      const dh=document.getElementById("docHeader").cloneNode(true);dh.removeAttribute("id");
+      [...dh.querySelectorAll("[id]")].forEach(n=>n.removeAttribute("id"));
+      pg.appendChild(dh); // タイトル・工期・担当者・作成日は全ページに
+      const clone=gridEl.cloneNode(true);clone.removeAttribute("id");
+      [...clone.querySelectorAll("[id]")].forEach(n=>n.removeAttribute("id"));
+      const dst=[...clone.querySelectorAll("input")];
+      dst.forEach((el,i)=>{if(srcInputs[i])el.setAttribute("value",srcInputs[i].value);});
+      clone.style.gridTemplateColumns=leftW+"px "+sliceW+"px";clone.style.minWidth="0";
+      if(custMode){const cn=clone.querySelector(".corner");if(cn)cn.textContent="工事項目";}
+      const th=clone.querySelector(".timehead"),ln=clone.querySelector(".lane");
+      [[th,52],[ln,laneH]].forEach(([el,h])=>{
+        const inner=document.createElement("div");
+        inner.style.cssText="position:absolute;left:"+(-p*sliceW)+"px;top:0;width:"+laneW+"px;height:"+h+"px;";
+        while(el.firstChild)inner.appendChild(el.firstChild);
+        el.appendChild(inner);
+        el.style.position="relative";el.style.overflow="hidden";el.style.width=sliceW+"px";el.style.height=h+"px";
+      });
+      pg.appendChild(clone);
+      const df=document.getElementById("docFooterWrap").cloneNode(true);df.removeAttribute("id");
+      [...df.querySelectorAll("[id]")].forEach(n=>n.removeAttribute("id"));
+      pg.appendChild(df); // 社名・ロゴは全ページに
+      holder.appendChild(pg);
+    }
+  }
+  let printPrepared=false;
+  function preparePrint(hideVendor){
+    if(printPrepared)return;
+    if(!state||document.getElementById("editor").classList.contains("hidden"))return;
+    printPrepared=true;updateDoc();buildPrintPages(!!hideVendor);
+    document.body.classList.add("printing");
+    document.body.classList.toggle("custprint",!!hideVendor);
+  }
+  function cleanupPrint(){
+    printPrepared=false;document.body.classList.remove("printing");document.body.classList.remove("custprint");
+    document.getElementById("printPages").innerHTML="";
+  }
+  window.addEventListener("beforeprint",()=>preparePrint(false));
+  window.addEventListener("afterprint",cleanupPrint);
+  document.getElementById("printBtn").addEventListener("click",()=>{preparePrint(false);window.print();});
+  document.getElementById("pdfSiteBtn").addEventListener("click",()=>{toast("印刷ダイアログの送信先で「PDFに保存」を選んでください");preparePrint(false);window.print();});
+  document.getElementById("pdfCustBtn").addEventListener("click",()=>{toast("お客様用（業者名なし）です。送信先で「PDFに保存」を選んでください");preparePrint(true);window.print();});
+  document.getElementById("newBtn").addEventListener("click",()=>{
+    renderLibrary();renderResume();
+    document.getElementById("editor").classList.add("hidden");document.getElementById("setup").classList.remove("hidden");
+    window.scrollTo(0,0);
+  });
+  document.getElementById("saveBtn").addEventListener("click",saveToLibrary);
+
+  // ---------- 保存物件ライブラリ ----------
+  const LIB="koutei_library";
+  function loadLib(){if(BR&&LIBC)return LIBC;try{return JSON.parse(localStorage.getItem(LIB))||[];}catch(e){return [];}}
+  function saveLib(a){if(BR){LIBC=a;return;}try{localStorage.setItem(LIB,JSON.stringify(a));}catch(e){}}
+  async function saveToLibrary(){
+    let nm=(state.name||"").trim();
+    if(!nm||nm==="（無題）"){ nm="無題の工程表 "+toISO(new Date()); state.name=nm; updateDoc(); }
+    const lib=loadLib();
+    let i=lib.findIndex(e=>e.data&&e.data.uid===state.uid); // 同一物件（ID一致）は上書き
+    if(i<0){
+      const same=lib.findIndex(e=>e.name===nm);
+      if(same>=0){
+        const ok=await ask("同じ物件名「"+nm+"」が既に保存されています。既存の物件に上書きしますか？","上書きする","別の名前で保存");
+        if(ok){ i=same; if(lib[same].data&&lib[same].data.uid) state.uid=lib[same].data.uid; }
+        else { let k=2; while(lib.some(e=>e.name===nm+"（"+k+"）"))k++; nm=nm+"（"+k+"）"; state.name=nm; updateDoc(); }
+      }
+    }
+    const entry={id:i>=0?lib[i].id:Date.now(),name:nm,template:state.template,savedAt:toISO(new Date()),data:JSON.parse(JSON.stringify(state))};
+    entry.data.name=nm;
+    if(i>=0)lib[i]=entry;else lib.push(entry);
+    saveLib(lib); persist();
+    if(BR){ try{ await BR.save(entry); toast("「"+nm+"」を事務所の共有保存に保存しました"); }catch(e){ toast("⚠ 共有保存に失敗しました。もう一度「途中保存」を押してください"); } }
+    else toast("「"+nm+"」をこの端末に保存しました");
+  }
+  function renderLibrary(){
+    const sec=document.getElementById("libSection"); if(!sec)return;
+    const lib=loadLib(); sec.innerHTML="";
+    if(!lib.length)return;
+    const h=document.createElement("div");h.className="lib-h";h.textContent="保存した物件（開く＝続きを編集 ／ 複製＝近似物件のコピーを作成）";sec.appendChild(h);
+    const groups={}; lib.forEach(e=>{(groups[e.template]=groups[e.template]||[]).push(e);});
+    const keys=[...new Set([...Object.keys(TEMPLATES).filter(k=>groups[k]),...Object.keys(groups)])];
+    keys.forEach(k=>{
+      const g=document.createElement("div");g.className="lib-g";
+      const gl=document.createElement("div");gl.className="lib-gl";gl.textContent=tplLabel(k);g.appendChild(gl);
+      groups[k].sort((a,b)=>b.id-a.id).forEach(e=>{
+        const ts=e.data.cats?e.data.cats.flatMap(c=>c.tasks):[];
+        const done=ts.filter(t=>t.done).length;
+        const pct=ts.length?Math.round(done/ts.length*100):0;
+        const it=document.createElement("div");it.className="lib-item";
+        const info=document.createElement("div");info.className="lib-info";
+        info.innerHTML="<div class='lib-nm'>"+escapeHtml(e.name)+"</div><div class='lib-sub'>着工 "+(e.data.start||"—")+" ・ "+ts.length+"項目 ・ 進捗"+pct+"% ・ 保存 "+e.savedAt+"</div>";
+        const use=document.createElement("button");use.className="btn primary sm";use.textContent="開く";
+        use.addEventListener("click",()=>{ state=normalize(JSON.parse(JSON.stringify(e.data))); enterEditor(); });
+        const dup=document.createElement("button");dup.className="btn ghost sm";dup.textContent="複製";dup.title="この物件のコピーを作成（近似物件向け）";
+        dup.addEventListener("click",()=>{
+          const copy=JSON.parse(JSON.stringify(e));
+          copy.id=Date.now(); copy.name=e.name+"（コピー）"; copy.data.name=copy.name; copy.data.uid=newUid(); copy.savedAt=toISO(new Date());
+          const lib2=loadLib(); lib2.push(copy); saveLib(lib2); renderLibrary();
+          if(BR) BR.save(copy).catch(()=>toast("⚠ 共有保存に失敗しました"));
+          toast("「"+copy.name+"」を作成しました。「開く」で編集できます");
+        });
+        const del=document.createElement("button");del.className="btn ghost sm";del.textContent="削除";
+        del.addEventListener("click",()=>{ ask("保存物件「"+e.name+"」を削除しますか？","削除する").then(ok=>{ if(ok){ saveLib(loadLib().filter(x=>x.id!==e.id)); if(BR) BR.remove(uidOf(e)).catch(()=>toast("⚠ 共有保存から削除できませんでした")); renderLibrary(); } }); });
+        it.append(info,use,dup,del); g.appendChild(it);
+      });
+      sec.appendChild(g);
+    });
+  }
+  function renderResume(){
+    const sec=document.getElementById("resumeSection");if(!sec)return;sec.innerHTML="";
+    if(!state||!state.cats)return;
+    const ts=state.cats.flatMap(c=>c.tasks);
+    const done=ts.filter(t=>t.done).length;
+    const tplL=tplLabel(state.template);
+    const h=document.createElement("div");h.className="lib-h";h.textContent="作業中のシート（前回の続き）";
+    const it=document.createElement("div");it.className="lib-item";
+    const info=document.createElement("div");info.className="lib-info";
+    info.innerHTML="<div class='lib-nm'>"+escapeHtml(state.name||"（無題）")+"</div><div class='lib-sub'>"+tplL+" ・ 着工 "+(state.start||"—")+" ・ "+ts.length+"項目 ・ 進捗"+(ts.length?Math.round(done/ts.length*100):0)+"%</div>";
+    const open=document.createElement("button");open.className="btn primary sm";open.textContent="続きを開く";
+    open.addEventListener("click",()=>enterEditor());
+    it.append(info,open);
+    sec.append(h,it);
+  }
+
+  // ---------- クラウド同期（Supabase） ----------
+  const SUPA_URL="https://aqqrqaeytyphfxaixbht.supabase.co";
+  const SUPA_KEY="sb_publishable_Qk4aCyzrtUDkzCAZiAhrjg_nQ93MLk_";
+  let supa=null, cloudUser=null;
+  function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+  function uidOf(e){return (e.data&&e.data.uid)?e.data.uid:String(e.id);}
+  async function initCloud(){
+    try{
+      if(!window.supabase) await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+      supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+      const {data}=await supa.auth.getSession();
+      cloudUser=data&&data.session?data.session.user:null;
+      updateCloudUI();
+      if(cloudUser) syncFromCloud();
+      supa.auth.onAuthStateChange((ev,sess)=>{
+        const before=!!cloudUser; cloudUser=sess?sess.user:null; updateCloudUI();
+        if(cloudUser&&!before) syncFromCloud();
+      });
+    }catch(e){ supa=null; updateCloudUI(); }
+  }
+  async function pushEntry(e){
+    if(!supa||!cloudUser) return;
+    const uid=uidOf(e); if(e.data&&!e.data.uid)e.data.uid=uid;
+    const {error}=await supa.from("projects").upsert({uid,name:e.name,template:e.template,saved_at:e.savedAt,data:e.data,updated_at:new Date().toISOString()});
+    if(error) throw error;
+  }
+  async function cloudDelete(uid){
+    if(!supa||!cloudUser) return;
+    try{ await supa.from("projects").delete().eq("uid",uid); }catch(e){}
+  }
+  async function syncFromCloud(){
+    try{
+      const {data:rows,error}=await supa.from("projects").select("uid,name,template,saved_at,data,updated_at");
+      if(error) throw error;
+      const cloudUids=new Set((rows||[]).map(r=>r.uid));
+      // この端末にしかない物件をクラウドへ移行
+      for(const e of loadLib()){ if(!cloudUids.has(uidOf(e))){ try{ await pushEntry(e); }catch(_){} } }
+      const {data:rows2}=await supa.from("projects").select("uid,name,template,saved_at,data,updated_at");
+      const newLib=(rows2||[]).map(r=>({id:Date.parse(r.updated_at)||Date.now(),name:r.name,template:r.template,savedAt:r.saved_at,data:r.data}));
+      saveLib(newLib); renderLibrary();
+      toast("☁ クラウドと同期しました（"+newLib.length+"件）");
+    }catch(e){ toast("⚠ クラウド同期に失敗（この端末の保存で動作中）"); }
+  }
+  function updateCloudUI(){
+    const st=document.getElementById("cloudStatus"),btn=document.getElementById("cloudBtn"),be=document.getElementById("cloudBtnE");
+    if(!st) return;
+    if(!supa){ st.textContent="オフライン（保存はこの端末のみ）"; st.className="cstat"; btn.textContent="再接続"; }
+    else if(!cloudUser){ st.textContent="未ログイン（保存はこの端末のみ）"; st.className="cstat"; btn.textContent="ログイン"; }
+    else{ st.textContent="☁ クラウド同期中："+(cloudUser.email||""); st.className="cstat on"; btn.textContent="ログアウト"; }
+    if(be) be.textContent=cloudUser?"☁ 同期中":"☁ ログイン";
+  }
+  async function cloudBtnClick(){
+    if(supa&&cloudUser){
+      if(confirm("ログアウトしますか？（以降の保存はこの端末のみになります）")){ await supa.auth.signOut(); toast("ログアウトしました"); }
+      return;
+    }
+    if(!supa) await initCloud();
+    document.getElementById("liErr").textContent="";
+    document.getElementById("loginBg").classList.remove("hidden");
+    document.getElementById("liEmail").focus();
+  }
+  async function doLogin(){
+    const err=document.getElementById("liErr"); err.textContent="";
+    if(!supa){ err.textContent="接続できません。ネット接続を確認してください"; return; }
+    const em=document.getElementById("liEmail").value.trim(), pw=document.getElementById("liPass").value;
+    if(!em||!pw){ err.textContent="メールアドレスとパスワードを入力してください"; return; }
+    try{
+      const {error}=await supa.auth.signInWithPassword({email:em,password:pw});
+      if(error){ err.textContent="ログインできません。メール/パスワードを確認してください"; return; }
+      document.getElementById("loginBg").classList.add("hidden");
+      document.getElementById("liPass").value="";
+    }catch(e){ err.textContent="通信エラー。ネット接続を確認してください"; }
+  }
+  document.getElementById("cloudBtn").addEventListener("click",cloudBtnClick);
+  document.getElementById("cloudBtnE").addEventListener("click",cloudBtnClick);
+  document.getElementById("liSubmit").addEventListener("click",doLogin);
+  document.getElementById("liPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+  document.getElementById("liCancel").addEventListener("click",()=>document.getElementById("loginBg").classList.add("hidden"));
+  document.getElementById("loginBg").addEventListener("click",e=>{if(e.target.id==="loginBg")e.target.classList.add("hidden");});
+
+  renderLibrary();
+  // 起動時は常にトップ画面から。作業中シートは「続きを開く」で再開
+  try{
+    let saved=localStorage.getItem(STORE)||localStorage.getItem(STORE_OLD);
+    if(saved){const s=JSON.parse(saved);if(s&&s.cats){state=normalize(s);}}
+  }catch(e){}
+  renderResume();
+  window.KOUTEI_OPEN=function(s){ state=normalize(JSON.parse(JSON.stringify(s))); enterEditor(); };
+  if(BR){
+    const st=document.getElementById("cloudStatus"); if(st) st.textContent="事務所の共有保存";
+    BR.list().then(l=>{LIBC=Array.isArray(l)?l:[];renderLibrary();}).catch(()=>{LIBC=[];renderLibrary();toast("⚠ 共有保存を読めませんでした");});
+  }
+})();
+</script>
+
+</body></html>
