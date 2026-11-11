@@ -216,7 +216,8 @@
   #printPages.pdfmode .dh-title,#printPages.pdfmode .dh-term,#printPages.pdfmode .dh-r,#printPages.pdfmode .dh-edit{color:#111!important;}
   #printPages.pdfmode .dh-title{font-size:30px;} #printPages.pdfmode .dh-term{font-size:22px;} #printPages.pdfmode .dh-r{font-size:19px;}
   #printPages.pdfmode .dh-edit{border-bottom:none!important;min-width:0;}
-  #printPages.pdfmode .corner,#printPages.pdfmode .timehead,#printPages.pdfmode .labels,#printPages.pdfmode .catlabel{position:static!important;}
+  #printPages.pdfmode .corner,#printPages.pdfmode .labels,#printPages.pdfmode .catlabel{position:static!important;}
+  #printPages.pdfmode .grid .timehead,#printPages.pdfmode .grid .lane{position:relative!important;}
   #printPages.pdfmode .rl2 input{border:none!important;background:none!important;color:#333!important;padding:2px 0;}
   #printPages.pdfmode .rl2 input::placeholder{color:transparent!important;}
   #printPages.pdfmode .docfooter{margin-top:10px;border-top:1px solid #999;padding-top:8px;}
@@ -539,6 +540,7 @@
       manager:"", createdDate:toISO(new Date()), company:COMPANY_DEFAULT,
       cats:t.cats.map((c,i)=>({name:c.name,color:PALETTE[i%PALETTE.length],
         tasks:c.tasks.map(([name,start,dur])=>mkTask(name,start,dur))})) };
+    placeByWorkdays(normalize(state));
     enterEditor();
   }
   document.getElementById("createBtn").addEventListener("click",async()=>{
@@ -554,6 +556,7 @@
     });
     state={ name:nm, uid:newUid(), template:"standard", start:toISO(new Date()), dayW:44,
       settings:defaultSettings(), manager:"", createdDate:toISO(new Date()), company:COMPANY_DEFAULT, cats };
+    placeByWorkdays(normalize(state));
     enterEditor();
   });
 
@@ -578,6 +581,16 @@
   function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove("show"),m.length>30?6000:2000);}
   let barMap=new Map(), taskY=new Map(), linkSvg=null;
 
+  // テンプレートの開始は「着工日から数えた営業日」。休日を数えずに並べるので、連続する工程が重ならない
+  function placeByWorkdays(s){
+    state=s; const all=s.cats.flatMap(c=>c.tasks); let i0=0,g=0; while(!isWorkday(dAt(i0))&&g++<60)i0++;
+    all.forEach(t=>{ const n=Math.round(Number(t.start)||0); let i,c=0,k=0;
+      if(n>=0){ i=i0; while(c<n&&k++<2000){ i++; if(isWorkday(dAt(i)))c++; } }
+      else { i=0; while(c<-n&&k++<2000){ i--; if(isWorkday(dAt(i)))c++; } }
+      t.start=i; });
+    const min=Math.min(0,...all.map(t=>t.start)); s.lead=Math.max(typeof s.lead==="number"?s.lead:14, Math.ceil(-min/7)*7);
+    delete s.fresh; return s;
+  }
   function enterEditor(){
     document.getElementById("setup").classList.add("hidden");
     document.getElementById("editor").classList.remove("hidden");
@@ -1049,6 +1062,7 @@
         }
       }
       if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+      const scEl=document.getElementById("scroller"); var keepX=scEl.scrollLeft, keepY=scEl.scrollTop, keepW=window.scrollY; scEl.scrollLeft=0; scEl.scrollTop=0; window.scrollTo(0,0);
       updateDoc(); buildPrintPages(!!cust);
       holder.classList.add("pdfmode"); holder.classList.toggle("cust",!!cust);
       for(const im of holder.querySelectorAll("img.dfoot-logo")){
@@ -1069,6 +1083,7 @@
       const bytes=pdf.output("arraybuffer");
       const fname=((state.name||"工程表").replace(/[\\/:*?"<>|]/g,"_"))+(cust?"_お客様用":"_現場用")+".pdf";
       holder.classList.remove("pdfmode","cust"); holder.removeAttribute("style"); holder.innerHTML="";
+      scEl.scrollLeft=keepX; scEl.scrollTop=keepY; window.scrollTo(0,keepW);
       if(!PDFSAVE){ toast("この画面ではPDFを保存できません"); return; }
       const go=await ask("PDFができました（"+pages.length+"ページ・"+Math.round(bytes.byteLength/1024)+"KB）。「保存する」を押すと保存の確認が出ます。保存したPDFを開いて印刷してください。","保存する","やめる");
       if(!go){ toast("保存をやめました"); return; }
@@ -1253,7 +1268,7 @@
     if(saved){const s=JSON.parse(saved);if(s&&s.cats){state=normalize(s);}}
   }catch(e){}
   renderResume();
-  window.KOUTEI_OPEN=function(s){ state=normalize(JSON.parse(JSON.stringify(s))); enterEditor(); };
+  window.KOUTEI_OPEN=function(s){ const n=normalize(JSON.parse(JSON.stringify(s))); state=n.fresh?placeByWorkdays(n):n; enterEditor(); };
   if(BR){
     const st=document.getElementById("cloudStatus"); if(st) st.textContent="事務所の共有保存";
     BR.list().then(l=>{LIBC=Array.isArray(l)?l:[];renderLibrary();}).catch(()=>{LIBC=[];renderLibrary();toast("⚠ 共有保存を読めませんでした");});
